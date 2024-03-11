@@ -1,0 +1,671 @@
+copy the newer changes for these files from archlinux to gentoo:
+
+------
+(new)blugon PKGBUILD and patch(es)
+^ actually not sure where to copy these!
+------
+
+some other packages/PKGBUILDs got updated(manually) since last saved q1q
+------
+----
+
+firefox's user.js got updated! (copied it into /home/user/1TODO/newer)
+so use the live dir when updating the i87k gentoo firefox:
+/home/user/build/1packages/4used/firefox-hg
+------
+updated linuxgit linux-git.install file! for mkinitcpio, seems not needed for Gentoo tho! ie. no mkinitcpio on Gentoo!
+updated linux-stable le9h.patch (if nothing else), for 5.5.5 stable kernel, get it from $ cdks
+currently no linux kernel patches are present on Gentoo!
+-------
+NIC_replug.patch got(newly) commented out in linuxgit PKGBUILD for linux-stable to not warn me on dmesg because it loaded the wrong PHY for LAN
+
+new linuxgit patch: NIC_replug_reminder.patch
+for Z575!
+------
+--------
+/home/user/build/2nonpkgs/rust.stuff/rust.vim/
+doesn't yet exist in Gentoo
+and it needs the ~/.vim/bundle/rust.vim symlink updated to point to it!
+
+none of 2nonpkgs exist yet!
+--------
+bitbucket login page/dashboard shows empty webpage so I can't login!(currently, with firefox - didn't try any other browser)
+bitbucket needs asmjs in about:config to be true!!!
+but dashboard is still empty!
+
+follow these for the hg/mercurial bug:
+https://bitbucket.org/tortoisehg/thg/issues/2347/bug-lookuperror
+https://bitbucket.org/tortoisehg/thg/issues/3386/no-match-found
+https://bitbucket.org/tortoisehg/thg/issues/5504/many-bugs-using-thg-for-unity-project
+
+------
+make the following into ~/bin/regenkernel
+
+$ cd /tmp/genkernel.outdir
+$ sudo -u _kernelbuilder -g _kernelbuilder -- make nconfig
+--------
+updated on Z575 archlinux:
+hosts:  /etc/hosts
+firefox-hg patches got updated
+myrules firewall:  /etc/iptables/myrules.v4
+^ wasn't yet put on i87k, but still gotta remember to use this one instead of the one restored!
+-----
+----
+// bash-devel got a new patch, copy to i87k
+// the one with history load times notification if over 1sec
+------
+put this on the new github account
+https://www.instagram.com/p/B8J2YHAHkPl/?taken-by=kellyfarrellcoaching
+----
+// new SN
+----
+// changed:
+// ~/bin/fwall_android_internet
+-----
+// /etc/hosts.dnsmasq
+// got changed
+// placed it in /etc on gentoo!
+------
+~/build/1packages/4used/dnsmasq-git
+got changed PKGBUILD
+------
+only on Z575:
+amdmsrtweaker-lnx needs a new location
+and a way to get started at startup since openrc is on gentoo instead of systemd!
+get kernel compilation to place the proper kernel modules in amdmsrtweaker-lnx 's dir, as it did on archlinux!
+
+-------
+don't forget the msr and cpuid kernel modules! on the installcd usb stick!
+for amdmsrtweaker-lnx
+--------
+
+// fixed ~/bin/def
+added changed repo: /home/user/build/2nonpkgs/cambridge-cli
+-----
+at the finale, check that the patches on Gentoo are up to date with those on archlinux!
+--------
+remove all '-t' args from mktemp in scripts, the template XXXXX will still be kept but this way the dir used is the one in -p aka --tmpdir instead of the one in $TMPDIR
+
+$ grep -nrIFw mktemp | grep -- -t|wc -l
+38
+
+------
+// on gentoo /etc/mc/mc.charsets is missing; but not on archlinux!
+// apparently not, so ignoring
+-----
+do I need media-libs/freetype ? which is freetype2 on archlinux!
+and which has config set to Infinality in /etc/profile.d/freetype2.sh
+------
+do I need media-gfx/imagemagick ?
+if so, update its policy:
+/etc/ImageMagick-7/policy.xml
+it has some security fixes inside it! on archlinux!
+--------
+// updated
+// ~/bin/diggitsites
+------
+updated some extensions like:
+/home/user/build/2nonpkgs/browser.stuff/both/uBlock/
+-----
+// coreutils dd patch conv_diff.patch
+// there's also strip_0x0D_at_end_of_file.patch but I might've already added it!
+------
+// ~/.vimrc got changed/updated!
+------
+// added
+// /home/user/sandbox/kernel/hid_gadget_test
+----
+// ~/bin/gtkreload
+----
+// fox
+// those 'export' env vars are probably not getting through bwrap?!
+-----
+// /etc/default/grub
+-----
+// bin/diffdmesgs
+-------
+/usr/lib/systemd/system-shutdown/debug.sh
+-----
+/home/user/logs/mouse_dx_eco_genius_and_raid6_slowdown
+------
+//see if we have acpid in Gentoo
+we do but it's different! need to see how to integrate my archlinux changes from /etc/acpi/handler.sh into gentoo version!
+
+then take /etc/acpi/handler.sh from archlinux! (modified)
+<libomsai[m]> Yes sys-power/acpid is portage and acpid looks inside of /etc/acpi/events/ and comes with /etc/acpi/default.sh
+------
+// ~/sandbox/kernel/usb_power
+-----
+//  bin/confHOME/home/user/.gitconfig
+------
+//  bin/confHOME/home/user/.second.bashrc
+------
+// continue from /patches/portage/sys-devel/
+//   to update with those *.reused folders
+-------
+// preserve some env. vars (see `man sudoers`, env_check env_keep) when running 'sudo', such as LESS and LESS_TERMCAP_*
+// gotta put some config/setting(s) in /etc/sudoers.d/
+//   done /etc/sudoers.d/70-env_keep
+-------
+// since I'm compiling as _kernelbuilder user, all files inside initramfs are owned by that user instead of root, so do I need them to be owned by root? if so, FIXME
+// I guess not:
+// CPIO_ARGS="--quiet --null -o -H newc --owner root:root --force-local"
+// in /usr/share/genkernel/gen_initramfs.sh
+------
+// bash patches updated:
+// always_append_on_redirection.patch
+// glibc patches updated:
+// kernel patches updated:
+// deny_lseek_past_EOF_when_O_APPEND.patch
+// coreutils patches updated:
+//  conv_diff_8_32.patch
+-----
+on archlinux, figure out what in my modified glibc, compared to upstream glibc on archlinux, causes some coreutils 'make check' test to FAIL inotify stuff: tests/tail-2/inotify-dir-recreate
+-------
+// make 'dd' warn/quit if O_APPEND on of=  and seek is used
+-----
+// how do I apply a change to all (or latest?) *.ebuild files for something like openssh for example?
+// I need to add these in src_install() {
+// cp -a -- "${ED}/etc/ssh/sshd_config" "${ED}/etc/ssh/.dist.sshd_config"
+// cp -a -- "${ED}/etc/ssh/ssh_config" "${ED}/etc/ssh/.dist.ssh_config"
+// done via /etc/portage/env/net-misc/openssh file which is sourced, used post_src_install() {} function!
+// doneFIXME: this didn't work as expected, old .dist* files got overwritted! possibly due to $ED being empty? no, $ED isn't empty! and for some reason it worked now: eg. IMPORTANT: config file '/etc/ssh/.dist.ssh_config' needs updating. So idno why! looks like it only works if I manually edit it! but if it's leftover from prev. package, it's just overwritten!
+//  I think I need to emulate manual user modification, ie. after package is merged! done via function post_pkg_postinst() in /etc/portage/env/net-misc/openssh
+
+------
+
+---------
+//make 'mount' try all multiple entries from /etc/fstab eg. /tmp as zram and as tmpfs
+//
+//LIBMOUNT_DEBUG=all mount --fstab /fstab.test /tmp
+//make func like mnt_table_add_fs but for list_del(onearghere)
+//see libmount/src/context.c:2407
+//
+//so either delete the tried and failed entry from that list, and retry until no more are found, or loop all entries until success or no more left
+// done for target(eg. /tmp) only, as patch multiple_target_fstab-entries.patch
+-------
+// new: /home/user/sandbox/c/backtrace
+// ------
+// new:
+// /home/user/sandbox/makepkg
+// /home/user/sandbox/bash/source_fail
+// /home/user/build/1packages/4used/util-linux/multiple_target_fstab-entries.patch
+------
+// make cpuvary remount,rw /sys if it's readonly or else it will fail to work!
+---------
+do I replace tlp with laptop-mode-tools on Gentoo?
+if I keep tlp, then I've to change it's config on archlinux first, make sure it uses /etc/tlp.d/ dir, see: https://linrunner.de/en/tlp/docs/tlp-configuration.html#config13
+if I replace tlp then see: https://github.com/rickysarraf/laptop-mode-tools
+which doesn't exist on archlinux!
+https://packages.gentoo.org/categories/app-laptop
+
+if I keep tlp then see: https://github.com/dywisor/tlp-portage
+--------
+fix that net_setup_link not working in Gentoo, for /etc/udev/rules.d/10-network.rules
+-----
+// updated:
+// /home/user/bin/multikeep
+// /home/user/bin/beep
+// bin/confHOME/home/user/.second.bashrc
+// bin/digyoutube
+// /etc/default/grub  (comment)
+// ~/sandbox/segfault
+// a bash patch to not trap segfaults
+-----
+
+find out how to use evdev instead of libinput in archlinux
+ok it must be via "You may also want to install xorg-xinput to be able to change settings at runtime. "
+
+$ xinput --help
+usage :
+	xinput get-feedbacks <device name>
+	xinput set-ptr-feedback <device name> <threshold> <num> <denom>
+	xinput set-integer-feedback <device name> <feedback id> <value>
+	xinput get-button-map <device name>
+	xinput set-button-map <device name> <map button 1> [<map button 2> [...]]
+	xinput set-pointer <device name> [<x index> <y index>]
+	xinput set-mode <device name> ABSOLUTE|RELATIVE
+	xinput list [--short || --long || --name-only || --id-only] [<device name>...]
+	xinput query-state <device name>
+	xinput test [-proximity] <device name>
+	xinput create-master <id> [<sendCore (dflt:1)>] [<enable (dflt:1)>]
+	xinput remove-master <id> [Floating|AttachToMaster (dflt:Floating)] [<returnPointer>] [<returnKeyboard>]
+	xinput reattach <id> <master>
+	xinput float <id>
+	xinput set-cp <window> <device>
+	xinput test-xi2 [--root] <device>
+	xinput map-to-output <device> <output name>
+	xinput list-props <device> [<device> ...]
+	xinput set-int-prop <device> <property> <format (8, 16, 32)> <val> [<val> ...]
+	xinput set-float-prop <device> <property> <val> [<val> ...]
+	xinput set-atom-prop <device> <property> <val> [<val> ...]
+	xinput watch-props <device>
+	xinput delete-prop <device> <property>
+	xinput set-prop <device> [--type=atom|float|int] [--format=8|16|32] <property> <val> [<val> ...]
+	xinput disable <device>
+	xinput enable <device>
+
+--------
+// add to Gentoo todo: don't forget to add /home/user/bin/fox as preferred browser in settings (for xfce4 at least) or else it will run firefox outside of bubblewrap aka bwrap(command)
+------
+get ccache on Gentoo to be an -9999 ebuild because they use .cpp instead of .c now even though 3.7.9 was recently released
+
+then apply the nodebug_dev_null.patch
+-------
+fix 'mount' to show the 'Entry' text for mount -at also, currently it only shows it for these:
++ mount /tmp
+mount: /tmp: /dev/zram1 already mounted or mount point busy.
+mount: Entry '1' exit code: '32'
+mount: Entry '2' exit code: '0'
++ mount /var/tmp
+mount: /var/tmp: /dev/zram2 already mounted or mount point busy.
+mount: Entry '1' exit code: '32'
+mount: Entry '2' exit code: '0'
++ mount /var/tmp/portage
+mount: /var/tmp/portage: special device /dev/zram3 does not exist.
+mount: Entry '1' exit code: '32'
+mount: /var/tmp/portage: wrong fs type, bad option, bad superblock on tmpfs, missing codepage or helper program, or other error.
+mount: Entry '2' exit code: '32'
+mount: /var/tmp/portage: can't find in /etc/fstab.
+mount: Entry '0' exit code: '1'
++ mount -at noproc,afs,ceph,cifs,coda,davfs,fuse,fuse.sshfs,gfs,glusterfs,lustre,ncpfs,nfs,nfs4,ocfs2,shfs,smbfs -O no_netdev
+mount: /tmp: /dev/zram1 already mounted or mount point busy.
+mount: /var/tmp: /dev/zram2 already mounted or mount point busy.
+mount: /var/tmp/portage: special device /dev/zram3 does not exist.
++ local ec=64
+
+as you can see for the -at version it doesn't show it, but it does execute it still!
+--------
+// new:
+// ~/bin/confHOME/home/user/.inputrc
+// ~/bin/fox
+// bin/digyoutube
+// bin/hgblame
+// /home/user/bin/confHOME/home/user/.second.bashrc
+// /home/user/sandbox/gtk/entry
+// /home/user/bin/bin4packages/2recompile_and_inst
+
+// /home/user/sandbox/bash/trap
+
+// gtk patches
+
+// bash updated patches, but beware that gentoo isn't yet using 'devel' branch!
+// get ebuild from:
+// https://data.gpo.zugaina.org/konsolebox/app-shells/bash/bash-9999.ebuild
+// https://data.gpo.zugaina.org/konsolebox/app-shells/bash/files/
+
+
+// mousepad patched in /home/user/build/1packages/4used/mousepad
+
+// new file in /etc/sudoers.d/
+
+// ~/.bash_logout
+-----
+//  * A preallocated buffer-size of 2048 (kB) or higher is recommended for the HD-audio driver!
+//  * CONFIG_SND_HDA_PREALLOC_SIZE=0
+// ^ that is not visible due to SND_DMA_SGBUF=y and this is Y because Depends on: SOUND [=m] && !UML && SND [=m] && X86 [=y] 
+// https://bugs.gentoo.org/show_bug.cgi?id=716252
+----
+// /etc/grub.d/40_custom
+// /etc/default/grub
+// /home/user/bin/confHOME/home/user/.inputrc
+// xfce4-terminal patches
+
+// bash got updated had to remove the 130 patch (which I also updated its comment!)
+
+// ~/bin/i7_scp*
+
+// patch  in /home/user/build/1packages/4used/xfwm4/20/libxfce4ui-devel
+--------
+// /swcode/cpuvary was made to run as root, see if I changed anything inside it?
+//  also did I update the sudoers.d on i87k? - i did
+--------
+make this be interruptible by C-c, after 'less' starts, I type /: and press <ENTER> then press 'q'
+
+$ time seq 1 32109|tr '\n' ':'| less
+
+real	0m24.743s
+user	0m24.011s
+sys	0m0.026s
+
+some tries in: /home/user/build/1packages/4used/less/le.patch
+quilt in:
+  /home/user/build/1packages/4used/pcre/makepkg_pacman/pcre/src/pcre-8.44/
+  /home/user/build/1packages/4used/less/makepkg_pacman/less/src/less-551.WORK/
+
+see:  https://github.com/gwsw/less/issues/57
+--------
+// bin/confHOME/home/user/.gdbinit
+// .cargo/config
+--------
+// ~/.vimrc
+// ~/.tmux.conf
+// unchanged: .bashrc
+// /swcode/swcode.bash
+// bin/crash_kernel_read
+/etc/systemd/system/kdump.service
+see: https://wiki.gentoo.org/wiki/Kernel_Crash_Dumps
+// sn
+// /home/user/build/1packages/4used/less/ ignore_case_unification.patch
+
+set proper CCACHE_BASEDIR in ~/.second.bashrc  on root too!
+
+sccache may be useless without this(or similar) CCACHE_BASEDIR patch https://github.com/mozilla/sccache/pull/104/files
+because imagine compiling different rust versions, they'd be in different /var/tmp/portage/ dirs!
+--------
+// /etc/modules-load.d/iptables.conf
+// /home/user/sandbox/python
+// /swcode/cpuvary
+// /home/user/sandbox/bash/reexecasroot
+// /swcode/swcode.bash
+// ~/bin/update-grub  disabled the zstd->lzo requirement! and a TODO added
+// ~/bin/pu #same zstd stuff disabled
+---------
+make clipman set selection to current selection if selection is none(which is what happens when any gtk program exits, yet clipman can still show it as last/current selection, in rightclick menu list)
+--------
+a saying:
+"if it's opensource, you're just the conduit for its creation"
+you aka the author
+because everyone seeing/using it, adds(creatively) to it by intentive toughts+feelings, which obviously can create in the past too!
+ok, technically not "just" ! you do play a big part(edit: in manifesting it-14july2020), presumably.
+--------
+
+the wima method: just invented it, 17 may 2020 04:00am, the 'which is more attractive' method. Split the issue into binary choices questions, ask the question and feel which one of the two answers is more attractive. If you're "good" at it, you should "guess" it right, presumably. This did, afterwards, remind me of the movie The Celestine Prophecy (2012) the motorcycle path choice.
+
+So using this, one should be able to guess the private key by asking the is bit 1 or 0 given this position in the key... but that's advanced wima level, I suppose.
+
+Maybe I should make an app to test the wima level of people.
+So for example, guess the number(from 0 to 100) by splitting the interval and asking yourself if the number is bigger or larger than the middle of interval, then redo for remaining interval(s) recursively.
+
+Maybe level 1 wima test should be: is bit 1 or 0, and that's all, no bigger numbers.
+
+--------
+make Home/End, Ctrl+left/right work inside less's search aka '/'
+--------
+make a ~/.bashrc.d/ and pull out sections from ~/.second.bashrc into it, name the files with 4 digits so that 100 things can be inserted in between, I guess
+--------
+///home/user/sandbox/python/pyqt5/grubmero/grubmero.py
+// get SCCACHE_DIR from ~/.second.bashrc
+--------
+/home/user/build/1packages/4used/keepassxc-git/
+gentoo: https://data.gpo.zugaina.org/gentoo/app-admin/keepassxc/
+// bin/confHOME/home/user/.second.bashrc  got keepassxc alias
+// keero
+--------
+/etc/acpi/handler.sh
+----------
+// /etc/default/grub
+///home/user/sandbox/python/ncurses
+//check those in python of sandbox, got updated!
+//  bin/digyoutube
+//coreutils patch: handle_windows_paths.patch
+--------
+// modify coreutils sha512sum and co. to try a patch with \ replaced with / iff "No such file or directory"
+// coreutils patch: handle_windows_paths.patch
+// doneTODO: only try this(and show msg) when it contains a '\' at least!
+--------
+FIXME: difference between Home/End inside tmux than outside, Home will exit vbindiff!
+  also tried looking at them with Ctrl+V
+in tmux, Home then End give:
+^[[1~ ^[[1;5F
+  vs outside:
+^[[H ^[[F
+
+  well, I stopped using tmux, too many little annoyances! but mainly copy/pasting long line (selected via shift+LMB) was pasting it as multiple lines
+  not to mention keys not working, or being offset(ie. F3 does F5 in mc)
+--------
+ensure all .config of all kernels have CONFIG_ACPI_CONFIGFS=n to disallow "arbitrary ACPI tables to be added at run-time."
+https://www.phoronix.com/scan.php?page=news_item&px=Linux-Lockdown-Bypass-ACPI-2
+
+it actually shows as "# CONFIG_ACPI_CONFIGFS is not set" in .config !
+--------
+added some firefox patch modifications
+//new bin/mozregression
+  //^ ignoring
+mod/comment /etc/udev/rules.d/75-mac-spoof.rules
+//  bin/i7_ssh
+//  bin/digyoutube
+--------
+//qlop -Ev
+//  segmentation fault
+//
+//portage-utils-0.88
+//  was fixed already in master on 8th july 2020!
+------
+//  set for gentoo i87k host!
+//  ensure 'patch' command always runs with args:
+//  --read-only=fail
+//         --read-only=behavior
+//            Behave as requested when trying to modify a read-only  file:  ignore
+//          the potential problem, warn about it (the default), or fail.
+//  --verbose
+//  --debug=65535   whereby 65536 is 0 (aka unspecified)
+//
+//
+//  look into "--set-time" and "--set-utc"
+
+  TODO: FIXME: ensure 'patch' doesn't ignore lines starting with @@ , at least warn if not outright fail/error!  this is how I missed a chunk of a patch!(because it was missing the 'diff' header)
+or, maybe don't ignore (or just warn) anything that isn't a comment (starts with # or // ?)
+------
+//get the kernel patch panic_earlier.patch  into gentoo too
+//set CONFIG_RANDOMIZE_MEMORY_PHYSICAL_PADDING=0x0 in gentoo's kernel .config too (instead of 0xa which got set due to MEMORY_HOTPLUG)
+------
+see if I want to select infinality via:
+  # eselect lcdfilter list
+maybe while inside X ? I assume this applies only for X
+  it's unset currently!
+there's also # eselect infinality
+------
+  //changes in /etc/default/grub
+------
+//take new kernel patch:
+//  two_test_modules_used_dash_instead_of_underscore_in_their_filenames.patch
+  //  it's irrelevant now; it has no bearing on anything.
+------
+  fixed uMatrix 'ret' was undefined!
+------
+  see if 'sudo powertop' changing some from Good to Bad will improve disk performance! change those SATA host things
+------
+  //note /etc/fstab changes
+  //Z575(or just Kingston SA400S37240G on Z575 ?) only has SATA rev. 3.0 so since 3.1 is required for asynchronous discard, don't use 'discard' or u get degraded performance! 
+  //re: https://www.phoronix.com/scan.php?page=news_item&px=Fedora-Btrfs-Opts-Discard-Comp
+  //discard=async  doesn't seem to exist? according to https://btrfs.wiki.kernel.org/index.php/Manpage/btrfs(5)#MOUNT_OPTIONS
+  //"Enable discarding of freed file blocks. This is useful for SSD devices, thinly provisioned LUNs, or virtual machine images; however, every storage layer must support discard for it to work. if the backing device does not support asynchronous queued TRIM, then this operation can severely degrade performance, because a synchronous TRIM operation will be attempted instead. Queued TRIM requires newer than SATA revision 3.1 chipsets and devices."
+------
+  see what we have similar on Gentoo, this is on ArchLinux (unchecked):
+  community/intel-undervolt 1.7-2
+    Intel CPU undervolting tool
+
+------
+//  /etc/default/grub got changed! enabled mitigations on Z575
+------
+  //new i7_ssh ! with chmod of the key
+------
+  find out how to sign kernel modules and have kernel only load signed ones!
+  but does that even work on Gentoo with external kernel modules like for virtualbox? or for zfs
+------
+  fix /etc/pam.d/system-auth so the delay is 0.5sec again! currently is 3 or 5 sec? I forget. Whichever is normal it is, even with my old modifications!
+------
+  make kernel patch for poll_queues= of nvme module so that if the value is larger that cpu cores (eg. =12) it will be capped to cpu cores (eg. 6) instead of getting set to =0 as it currently is! oh wait, it actually worked =12 when only 6 are onlined! (due to nosmt mitigations!) so I still have poll_queues = "12"
+  uhm...
+------
+  try other ioengine``s with 'fio'
+see: https://itpeernetwork.intel.com/tuning-performance-intel-optane-ssds-linux-operating-systems/
+------
+  //changed fstab: removed tmpfs entries, replaced space_cache
+  //updated /etc/default/grub
+------
+  ensure the crash dump on btrfs is zstd! it is 'none' according to compsize! likely due to btrfs not being mounted with compress-force?
+  looks like it's because of "fstab=no" kernel cmdline, so I should probably just force compression in kernel by default, ie. make it a patch like the <zstd:1 replacing zstd:3 as default> patch!
+------
+  //renamed python's cutectrl to cuspctrl in ~/sandbox/
+------
+//  python stuff in ~/bin/confHOME/home/user/.second.bashrc
+//  and in /root/.extend.bashrc
+//  ah nvm, used sys.path instead!
+------
+  //oh, a patch was changed in 5.8.5 stable kernel to make it apply, should ensure it's transferred to gentoo also
+  //apparently this? 2600_whichbug_for_kernel_5_8_3.patch
+------
+  //changed patch 3150_kernel_undervolting.patch to get 800Mhz to be lowest instead of 1.4Ghz, to see if temp is lower in idle?
+------
+  //switched /etc/fstab to zstd:1 again! (ensure fstab is up to date on Gentoo as well)
+  //it's just 'zstd' because of backwards compatibility! will use kernel patch to set it to 1, else 3 is default!
+------
+  modified /usr/lib/systemd/system/cpumax.service
+  to stick to 800-1000 Mhz range with powersave by default/at startup
+------
+  //new ~/bin/bench which uses openssl, because I keep forgetting that it's 'openssl speed'
+------
+  missing ')' in https://klein.readthedocs.io/en/latest/examples/alternativerunning.html
+  line: "endpoint.listen(Site(app.resource())"
+------
+  //removed 2200_fbcon_state_allocated_scrollbackbuffer.patch
+------
+  //2800_anotherNULLandpanic.patch
+  //instruction_not_supported_in_16bit_mode.patch
+  //2000_bios_usb_legacy_Lenovo_Z575_avoid_CPU_Not_Responding_for_kernel_5_9_1.patch
+  //removed zstd52.patch because it's already in, as per commit: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?h=linux-5.9.y&id=c0dfadfed87489fa6126ece161a14c2d15dbdc79
+------
+  in mc if you try to F5 copy a on a dir which is a-rwx there will be no error! especially bad if it's a subdir, you'll have no idea nothing was copied!
+------
+  see if to add any patches from https://github.com/Frogging-Family/linux-tkg/tree/master/linux-tkg-patches/5.9
+------
+  //some new stuff in ~/sandbox/
+  //update stuff in /swcode/
+------
+  //fix on gentoo:
+  // /etc/ssh/.dist.ssh_config and /etc/ssh/.dist.sshd_config are being overwritten with the updated package emerge and not compared like the ssh_config and sshd_config are! why?!
+------
+  //get kernel config from archlinux, check diffs between it and gentoo after trying regenkernel once
+------
+  make mc.git compile on gentoo
+  /home/user/build/1packages/4used/mc-git
+  /home/user/sshfs/patches/portage/app-misc/mc.reused
+------
+  //get patches from: https://bugs.gentoo.org/756238
+  //maybe? sure!
+  //get multilib.eclass patch
+  get dev-util/pkgconf patch however, I've no means of applying it other than copying pkgconf ebuild and files into localrepo then applying it there, manually; it's there in localrepo currently!
+  //try pulseaudio without localrepo as per fixed https://bugs.gentoo.org/756196#c6
+------
+  //very hard: fix spidermonkey and firefox compilation: https://bugs.gentoo.org/753218#c20
+------
+  look into reptyr https://github.com/nelhage/reptyr/issues/84
+  this should allow me to reparent emerge on gentoo from a ssh session to the console (not tested yet!) just in case I want to shutdown the ssh and wasn't already running it inside something like screen or tmux.
+------
+  on gentoo, need to ensure portage user and possibly even _kernelbuilder user, and my "user" have this cargo config from: ~/.cargo/config
+  //done this://OR, just set RUSTFLAGS for each host?!
+  fixme: some -Z flags can't be in RUSTFLAGS or stage0 rustc while building rust fails compilation because -Z can only exist on nightly rustc
+------
+  //make sure gentoo's compilation of rust respects some settings from my archlinux config.toml /home/user/build/2nonpkgs/rust.stuff/rust/config.toml
+------
+  //see on gentoo if this .js overrides my vendor.js in same location:
+  ///usr/lib64/firefox/browser/defaults/preferences/all-gentoo.js
+  //it does!!!!
+  //overridden some values in /var/db/repos/localrepo/www-client/firefox/files/gentoo-default-prefs.js
+------
+  //in gentoo's X, after $ startx  the mouse and keyboard aren't responding!
+  //[  7002.889] (EE) xf86OpenSerial: Cannot open device /dev/input/event2
+  //Permission denied.
+  //I had USE=-elogind  on xorg-server package, from long ago! even tho it was USE=elogind globally ! recompiling... works now!
+------
+  //see about mozconfig when compiling firefox on gentoo
+------
+  //see if I need to do any KMS stuff to replace fbcon or wut, on gentoo: https://wiki.gentoo.org/wiki/Xorg/Guide#Kernel_modesetting
+  //and then on laptop! after gentoo is installed!
+  //and then check if moving windows is as smooth as with archlinux!
+  //since CONFIG_DRM=y it auto selects the framebuffer stuff! so the question is do I need this DRM thing? apparently I do because 'radeon' module(or builtin) is under it as CONFIG_DRM_RADEON=y even that wiki says so https://wiki.gentoo.org/wiki/Xorg/Guide
+  //so I don't see how to disable legacy framebuffer drivers ...
+  //wait, maybe I misread 'make nconfig' info, if I can disable CONFIG_DRM_FBDEV_EMULATION=y then it might work!
+  //this makes the screen go black (even backlighting is off) on both laptop and desktop PC! - so restoring!
+  //hmm:
+  //--- /usr/src/.config	2020-11-25 10:06:26.066726934 +0100
+	//+++ /tmp/genkernel.outdir/.config	2020-11-29 09:57:39.788126607 +0100
+	//@@ -3403,11 +3403,8 @@ CONFIG_DRM_MIPI_DSI=y
+	// # CONFIG_DRM_DEBUG_MM is not set
+	// # CONFIG_DRM_DEBUG_SELFTEST is not set
+	// CONFIG_DRM_KMS_HELPER=y
+	//-CONFIG_DRM_KMS_FB_HELPER=y
+	// # CONFIG_DRM_DEBUG_DP_MST_TOPOLOGY_REFS is not set
+	//-CONFIG_DRM_FBDEV_EMULATION=y
+	//-CONFIG_DRM_FBDEV_OVERALLOC=100
+	//-# CONFIG_DRM_FBDEV_LEAK_PHYS_SMEM is not set
+	//+# CONFIG_DRM_FBDEV_EMULATION is not set
+	// # CONFIG_DRM_LOAD_EDID_FIRMWARE is not set
+	// # CONFIG_DRM_DP_CEC is not set
+	// CONFIG_DRM_TTM=y
+	//@@ -3513,15 +3510,7 @@ CONFIG_FB_CMDLINE=y
+	// CONFIG_FB_NOTIFY=y
+	// CONFIG_FB=y
+	// # CONFIG_FIRMWARE_EDID is not set
+	//-CONFIG_FB_CFB_FILLRECT=y
+	//-CONFIG_FB_CFB_COPYAREA=y
+	//-CONFIG_FB_CFB_IMAGEBLIT=y
+	//-CONFIG_FB_SYS_FILLRECT=y
+	//-CONFIG_FB_SYS_COPYAREA=y
+	//-CONFIG_FB_SYS_IMAGEBLIT=y
+	// # CONFIG_FB_FOREIGN_ENDIAN is not set
+	//-CONFIG_FB_SYS_FOPS=y
+	//-CONFIG_FB_DEFERRED_IO=y
+	// CONFIG_FB_MODE_HELPERS=y
+	// CONFIG_FB_TILEBLITTING=y
+
+------
+  //make this work on gentoo: rustc -C target-cpu=help
+  //even with system-llvm
+  //already have 2 patches for llvm respectively rust, but apparently the rust one had no effect even tho -DHAVE_SYSTEMLLVM_PATCH_FOR_TARGET_CPUS was set in /etc/portage/env/dev-lang/rust
+  //yeah that g++ -D flag won't get passes, so opted to completely replace with #if 1
+  //and it works!
+------
+  get some inspiration for writing uBlock Origin ebuild from https://gentoo.zugaina.org/AJAX/Ebuild/43971087/View
+  but don't use that public dir to place the .xpi there, it won't work due to firefox now not being built with --allow-addon-sideload
+  hmm, so either use a different public dir, or don't make it an ebuild and install the .xpi on currently ran firefox hmm...
+------
+  try sccache firefox compilation
+  see: https://github.com/mozilla/sccache/blob/master/docs/DistributedQuickstart.md
+  maybe disable incremental compilation: https://github.com/mozilla/sccache#rust
+------
+  modify ccache on gentoo so that if ran as root it will exit(1)
+  this way can catch which ebuilds are making root-owned files in /ccache/
+------
+  get this flac to mp3 fuse filesystem: https://gentoo.zugaina.org/Overlays/jmesmon/sys-fs/mp3fs
+  there's already in gentoo repo: version 0.91-r1 as sys-fs/mp3fs
+------
+  test that kdump/kexec works in gentoo! see: https://wiki.gentoo.org/wiki/Kernel_Crash_Dumps
+  use that echo c | tee /proc/sysrq-trigger
+------
+  // new play script
+  // /home/user/sandbox/bash/func_within_func
+------
+  /var/db/repos/gentoo/www-misc/profile-sync-daemon/profile-sync-daemon-6.35.ebuild
+  ewarn "${PN}-6 and later dropped OpenRC and /etc/psd.conf support"
+  ewarn "See https://github.com/graysky2/profile-sync-daemon#note-for-version-6"
+  make it somehow use openrc! else it requires systemd which is unacceptable!
+------
+  save ~/.config/PulseEffects/output/moo11.json
+  they are the presets for pulseeffects
+  and others for pulseeffects!
+  add that dir to rsank?
+------
+  maybe move ~/.config/PulseEffects into ~/bin/confHOME/ just like the other stuff!
+------
+  change/patch kernel so that when using memtest=3 (>=0) kernel arg/cmdline, it will hang if any mem errors are found unless some kind of new kernel arg is present at cmdline(presumably added via pressing 'e' on grub on next boot, if wanting to bypass the hang) Why? this will allow me to notice any new memory errors rather than miss them for the session due to not checking dmesg.
+------
+  // get the pgup/pagedown grub patch to gentoo
+  make the patch better tho (currently PgUp/PgDn will move 14 lines!)
+------
+  // kernel patch 2000_bios_usb_legacy_Lenovo_Z575_avoid_CPU_Not_Responding_for_kernel_5_10_1.patch
+------
+  investigate that cargo/rust output truncation, see file: output_truncated_rust_or_emerge.log
+------
+  some ~/bin/ got modified again! copy to gentoo!
+------
+  find out why md5sum a file name with a \ aka \\ in its name prepends a \ in front of the output md5 checksum line! thus causing it to fail recheck!
+------
+------
+------
+
+// KEEP THIS LAST!
+// thanks <telemachus> on #vim freenode irc, for a filetype that's not .c or .cpp which ale would yell/error on:
+// vim: set ft=javascript:

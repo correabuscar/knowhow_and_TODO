@@ -1,0 +1,1 @@
+linux: intel cpu guc stuff https://gist.github.com/Brainiarc7/aa43570f512906e882ad6cdd835efe57

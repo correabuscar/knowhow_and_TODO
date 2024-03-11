@@ -1,0 +1,19 @@
+* ------------------ Things to know in Rust:
+  * If you’re using more than one word in your filename, the convention is to use an underscore to separate them. For example, use hello_world.rs rather than helloworld.rs.
+  * It’s good style to place the opening curly bracket on the same line as the function declaration, adding one space in between.
+  * First, Rust style is to indent with four spaces, not a tab.
+  * you just need to know that using a ! means that you’re calling a macro instead of a normal function and that macros don’t always follow the same rules as functions.
+  * we end the line with a semicolon (;), which indicates that this expression is over and the next one is ready to begin. Most lines of Rust code end with a semicolon.
+  * You declare constants using the const keyword instead of the let keyword, and the type of the value must be annotated.
+  * you aren’t allowed to use mut with constants. Constants aren’t just immutable by default—they’re always immutable.
+  * Rust is a statically typed language, which means that it must know the types of all variables at compile time.
+  * Rust’s naming convention for constants is to use all uppercase with underscores between words.
+  * The variables that a closure captures by move are dropped in an unspecified order.
+
+* ------------------ Things to do when coding in Rust:
+  * consider using this lint that can set a threshold when detecting moves/copies, catch that Copy trait maybe?
+    \ or maybe mod this lint such that it can detect only Copy trait!
+    \ https://github.com/rust-lang/rust/pull/83519/files#diff-f479f8f1d2ed5f848531b050c5df0df73129fc002048c7090b152dc66f58aa10R2894
+    \ and here:
+    \ https://github.com/rust-lang/rust/pull/83519/files#diff-d62a3f464bf92f349dd535e40421d8f355f00e806e68cf57106f5a638a95e833R1
+

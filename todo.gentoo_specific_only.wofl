@@ -1,0 +1,676 @@
+---
+//stage3 needs more tar args than I used in wofl, thus see:
+//https://wiki.gentoo.org/wiki/Handbook:AMD64/Installation/Stage#Unpacking_the_stage_tarball
+----
+// in https://wiki.gentoo.org/wiki/Gentoo_Cheat_Sheet
+// emerge --regen
+// maybe put it in /etc/portage/postsync.d
+// no, this is old stuff, we don't need to do this with localrepo
+---
+add info to some wofl or log file:
+$ time sudo hdparm --user-master u --security-erase-enhanced a /dev/sdb
+security_password: "a"
+
+/dev/sdb:
+ Issuing SECURITY_ERASE command, password="a", user=user
+
+real	2m42.200s
+user	0m0.013s
+sys	0m0.008s
+
+but DO NOT add this too:
+$ sudo hdparm -I /dev/sdb
+
+/dev/sdb:
+
+ATA device, with non-removable media
+	Model Number:       KINGSTON SA400S37240G
+	Serial Number:      redacted
+	Firmware Revision:  SBFK71B1
+	Transport:          Serial, ATA8-AST, SATA 1.0a, SATA II Extensions, SATA Rev 2.5, SATA Rev 2.6, SATA Rev 3.0
+Standards:
+	Used: unknown (minor revision code 0x011b)
+	Supported: 10 9 8 7 6 5
+	Likely used: 10
+Configuration:
+	Logical		max	current
+	cylinders	16383	16383
+	heads		16	16
+	sectors/track	63	63
+	--
+	CHS current addressable sectors:    16514064
+	LBA    user addressable sectors:   268435455
+	LBA48  user addressable sectors:   468862128
+	Logical  Sector size:                   512 bytes
+	Physical Sector size:                   512 bytes
+	Logical Sector-0 offset:                  0 bytes
+	device size with M = 1024*1024:      228936 MBytes
+	device size with M = 1000*1000:      240057 MBytes (240 GB)
+	cache/buffer size  = unknown
+	Nominal Media Rotation Rate: Solid State Device
+Capabilities:
+	LBA, IORDY(can be disabled)
+	Queue depth: 32
+	Standby timer values: spec'd by Standard, no device specific minimum
+	R/W multiple sector transfer: Max = 1	Current = 1
+	Advanced power management level: disabled
+	DMA: mdma0 mdma1 mdma2 udma0 udma1 udma2 udma3 udma4 udma5 *udma6
+	     Cycle time: min=120ns recommended=120ns
+	PIO: pio0 pio1 pio2 pio3 pio4
+	     Cycle time: no flow control=120ns  IORDY flow control=120ns
+Commands/features:
+	Enabled	Supported:
+	   *	SMART feature set
+	   *	Security Mode feature set
+	   *	Power Management feature set
+	   *	Write cache
+	   *	Look-ahead
+	   *	Host Protected Area feature set
+	   *	WRITE_BUFFER command
+	   *	READ_BUFFER command
+	   *	NOP cmd
+	   *	DOWNLOAD_MICROCODE
+	    	Advanced Power Management feature set
+	   *	48-bit Address feature set
+	   *	Mandatory FLUSH_CACHE
+	   *	FLUSH_CACHE_EXT
+	   *	General Purpose Logging feature set
+	   *	WRITE_{DMA|MULTIPLE}_FUA_EXT
+	   *	64-bit World wide name
+	   *	WRITE_UNCORRECTABLE_EXT command
+	   *	{READ,WRITE}_DMA_EXT_GPL commands
+	   *	Segmented DOWNLOAD_MICROCODE
+	   *	Gen1 signaling speed (1.5Gb/s)
+	   *	Gen2 signaling speed (3.0Gb/s)
+	   *	Gen3 signaling speed (6.0Gb/s)
+	   *	Native Command Queueing (NCQ)
+	   *	Phy event counters
+	   *	READ_LOG_DMA_EXT equivalent to READ_LOG_EXT
+	   *	DMA Setup Auto-Activate optimization
+	    	Device-initiated interface power management
+	   *	Software settings preservation
+	   *	WRITE BUFFER DMA command
+	   *	READ BUFFER DMA command
+	   *	Data Set Management TRIM supported (limit 8 blocks)
+Security:
+	Master password revision code = 65534
+		supported
+		enabled
+	not	locked
+	not	frozen
+	not	expired: security count
+		supported: enhanced erase
+	Security level high
+	20min for SECURITY ERASE UNIT. 60min for ENHANCED SECURITY ERASE UNIT.
+Logical Unit WWN Device Identifier: redacted
+	NAA		: redacted
+	IEEE OUI	: redacted
+	Unique ID	: redacted
+Checksum: correct
+------
+//usbstick iso kernel args used:
+//"nodhcp docache debug nokeymap"
+//\ debug shouldn't be necessary it stops like 2-3 times with a shell and continues only on exit!
+-------
+// remove dir ~/.vim/swap because ~/.cache/vim/swap is used as per ~/.vimrc settings!
+// make sure ~/.cache/vim/swap is not in /tmp and thus be lost on crash due to tmpfs!
+// it's /home/user/.vim_swap/  now(confirmed), so nvm!
+------
+//add user (and group: user - which is added automatically when you useradd user)
+
+//already in wofl: //add group no-internet as 1001 right after user
+// yep I have it now (03-03-2020)
+-------
+add ~/*.ORIG_arch and ORIG_gentoo to rsank.lst !
+// */
+----
+see if hostname -f attempts to lookup the hostname still! (wasn't happening on archlinux)
+^ apparently not anymore!
+-----
+see if any files name *.hostspecific=* exist in / and either rename or remove them, since the ones without that suffix are from i87k!
+-----
+// see why there's packages.mask and package.mask dirs in /etc/portage/
+// and which one is correct(the latter no doubt!)
+// yes: /etc/portage/package.mask/ dir is correct! as per `man emerge` also!
+------
+// see if in archlinux this patch was applied or where's the one without .OLD extension?
+// fix_the_sometimes_truncated_shell_output_in_mc.patch.OLD
+// yes
+-----
+// see if this step from wofl is still needed:
+// * replace udev with eudev 
+// they are both installed!
+// actually udev is virtual, eudev is the only udev present!
+-----
+fix e-file to use port 443 instead of 80! (oh I did this but forgot to save the file here)
+fix e-file to not fail for any search expression
+fix this e-file awk error: 
+awk: cmd. line:55: warning: regexp escape sequence `\"' is not a known regexp operator
+// `
+-----
+see #MICROCODE="no"
+in /etc/genkernel.conf
+maybe how to use it as command line instead? as arg to genkernel in wofl!
+----
+see /etc/conf.d/keymaps
+and if that .second_bashrc stuff for ctrl+left/right keys is needed to be put there or where?!
+-----
+see if this step is needed from wofl:
+* delete some systemd leftover files from stage3
+------
+recompile mc wih adding modarcon16-defbg2
+and make sure it's in settings! because temp-set to defbg to avoid epic mc startup delay when defbg2 isn't found!
+------
+F3 in mc doesn't work:
+/tmp/mc-user/mcextCMMF4Z: line 14: /usr/lib/mc/ext.d/misc.sh: No such file or directory
+should be:
+/usr/libexec/mc/ext.d/misc.sh
+-------
+Ctrl+left/right doesn't work in vim anymore while on console aka TERM=linux
+due to my fixes for making them work at the command prompt
+
+see if they can be made to work by modifying .vimrc
+
+-------
+make genkernel use ccache somehow!
+------
+run genkernel as portage user and rerun as root only when install step
+------
+//find out how to log sudo command executed, probably some pam setting?
+//done via /etc/sudoers setting for /var/log/sudo.log
+------
+find out how to make logger work to log on dmesg!
+------
+see if this is till true from wofl:
+* consolekit must not be running 
+------
+see if this is really needed(works w/o them so far) for powertop:
+ * Messages for package sys-power/powertop-2.10:
+ * Log file: /tmp/ebuild.logs/build/sys-power/powertop-2.10:20190629-233628.log
+
+ *   CONFIG_TRACEPOINTS:         is not set when it should be.
+ *   CONFIG_CPU_FREQ_GOV_ONDEMAND:       is not set when it should be.
+ *   CONFIG_FTRACE:      is not set when it should be.
+ *   CONFIG_BLK_DEV_IO_TRACE:    is not set when it should be.
+ *   CONFIG_TRACING:     is not set when it should be.
+ * Please check to make sure these options are set correctly.
+ * Failure to do so may cause unexpected problems.
+>>> Auto-cleaning packages...
+---------
+find out why Shift+F3 does an F5 in mc
+-------
+see if this wofl part is needed:
+* rc-update add dbus default
+\ this is for reboot/shutdown menus in xfce to be enabled
+I added it but unsure if it's needed, since startx still doesn't start!
+-----------
+see if wofl part about ck-launch-session in ~/.xinitrc is needed!
+otherwise it'll be using archlinux's which is:
+  exec dbus-launch xfce4-session >/tmp/.xfce4-session.log 2>&1
+------
+//check /etc/X11 with archlinux's
+done
+------
+see why grub still works while some stuff in /boot is still zstd!
+-----
+oops?
+$ [  734.544107] INFO: task kworker/u8:5:14278 blocked for more than 36 seconds.
+[  734.544817]       Tainted: G          I       5.2.0-rc6-g37624b58542f #3
+[  734.545553] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[  734.546290] kworker/u8:5    D    0 14278      2 0x80004000
+[  734.546299] Workqueue: kmemstick memstick_check [memstick]
+[  734.546301] Call Trace:
+[  734.546306]  ? __schedule+0x1a3/0x450
+[  734.546308]  ? schedule+0x35/0xb0
+[  734.546309]  ? schedule_timeout+0x1de/0x2a0
+[  734.546311]  ? usb_start_wait_urb+0x9d/0xf0
+[  734.546313]  ? __kmalloc_track_caller+0x3b/0x160
+[  734.546314]  ? wait_for_common+0xb9/0x160
+[  734.546316]  ? wake_up_q+0x60/0x60
+[  734.546318]  ? memstick_set_rw_addr+0x44/0x50 [memstick]
+[  734.546319]  ? memstick_check+0xee/0x2a0 [memstick]
+[  734.546321]  ? process_one_work+0x19c/0x310
+[  734.546322]  ? worker_thread+0x45/0x3c0
+[  734.546324]  ? kthread+0xf1/0x130
+[  734.546325]  ? process_one_work+0x310/0x310
+[  734.546327]  ? kthread_park+0x80/0x80
+[  734.546328]  ? ret_from_fork+0x1f/0x40
+[  734.546347] INFO: task udevd:14993 blocked for more than 36 seconds.
+[  734.546348]       Tainted: G          I       5.2.0-rc6-g37624b58542f #3
+[  734.546353] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[  734.561149] udevd           D    0 14993  14897 0x00004000
+[  734.561150] Call Trace:
+[  734.561152]  ? __schedule+0x1a3/0x450
+[  734.561153]  ? schedule+0x35/0xb0
+[  734.561154]  ? schedule_timeout+0x1de/0x2a0
+[  734.561156]  ? pick_next_task_fair+0x479/0x620
+[  734.561157]  ? wait_for_common+0xb9/0x160
+[  734.561158]  ? wake_up_q+0x60/0x60
+[  734.561159]  ? flush_workqueue+0x130/0x420
+[  734.561161]  ? memstick_remove_host+0x10/0x90 [memstick]
+[  734.561164]  ? rtsx_usb_ms_drv_remove+0x7f/0xe0 [rtsx_usb_ms]
+[  734.561166]  ? platform_drv_remove+0x1f/0x40
+[  734.561168]  ? device_release_driver_internal+0xd3/0x1a0
+[  734.561169]  ? bus_remove_device+0xcd/0x110
+[  734.561170]  ? device_del+0x150/0x360
+[  734.561171]  ? platform_device_del.part.0+0xe/0x60
+[  734.561173]  ? platform_device_unregister+0x17/0x30
+[  734.561175]  ? mfd_remove_devices_fn+0x4a/0x51 [mfd_core]
+[  734.561176]  ? mfd_clone_cell+0xf0/0xf0 [mfd_core]
+[  734.561177]  ? device_for_each_child_reverse+0x58/0xa0
+[  734.561179]  ? mfd_remove_devices+0x2b/0x50 [mfd_core]
+[  734.561181]  ? rtsx_usb_disconnect+0x11/0x40 [rtsx_usb]
+[  734.561182]  ? usb_unbind_interface+0x7b/0x230
+[  734.561184]  ? device_release_driver_internal+0xd3/0x1a0
+[  734.561185]  ? bus_remove_device+0xcd/0x110
+[  734.561186]  ? device_del+0x150/0x360
+[  734.561188]  ? usb_remove_ep_devs+0x16/0x20
+[  734.561189]  ? usb_disable_device+0x7c/0x1c0
+[  734.561190]  ? usb_set_configuration+0x72/0x720
+[  734.561192]  ? cp_new_stat+0x14b/0x180
+[  734.561193]  ? remove_store+0x4e/0x60
+[  734.561195]  ? kernfs_fop_write+0x109/0x190
+[  734.561197]  ? vfs_write+0xa7/0x1a0
+[  734.561198]  ? ksys_write+0x5a/0xd0
+[  734.561200]  ? do_syscall_64+0x43/0x100
+[  734.561201]  ? entry_SYSCALL_64_after_hwframe+0x44/0xa9
+[  743.829233] udevd[14897]: worker [14993] /devices/pci0000:00/0000:00:13.2/usb2/2-1 is taking a long time
+
+-------
+get cpumin to run on startup, because nothing starts cpuvary to get temperature under control! and gov's upper limit is 1400 aka max freq which after undervolting is 2.9GHz!
+----
+indent requires nls bug:
+https://bugs.gentoo.org/666108 "dev-util/indent-2.2.12 fails to build without nls use flag"
+----
+genkernel --no-install is still doing modules_install:
+https://bugs.gentoo.org/505810 "sys-kernel/genkernel-3.4.45.1 - genkernel --no-install still installs modules"
+possibly fixed now: https://gitweb.gentoo.org/proj/genkernel.git/commit/?id=15b34c0a3b9c63cbedc25db05081fc5e2ed00b67
+(it's the last comment in that issue)
+-----
+if EAPI is less than 5, then fail!
+see: https://wiki.gentoo.org/wiki//etc/portage/patches#Enabling_.2Fetc.2Fportage.2Fpatches_for_all_ebuilds
+"If an ebuild has EAPI=5 or older and does not call epatch_user, but user patches are still needed to be applied, it is possible to use /etc/portage/bashrc and hooks provided by Portage. For details see the /etc/portage/bashrc article. "
+this implies that you can't epatch_user (maybe it doesn't exist) in EAPI<=4, thus we must fail the emerge!!!
+
+----
+ensure that ebuild/emerge fails if any dir/file within /patches/ (including /patches/) is inaccessible, possibly due to bad perms! (but not if it doesn't exist.)
+-----
+find out why this happened and fix it?
+I'm trying to run this: $ time sudo -u portage ebuild /usr/portage/sys-apps/man-db/man-db-9999.ebuild prepare      BUT, I get "fatal: not a git repository: '/distfiles/git3-src/man-db.git'", it looks like it's because that dir already exists and it's empty, probably from ealier runs (maybe from when I didn't have 'git' installed?)
+yep, removing the dir and rerunning worked
+-------
+delete systemd from /home/user/.config/ and find another way to run those!
+------
+report that fix/patch for genkernel whereby using
+--makeopts="-j4 V=0"
+is seen as:
+"-j4 0"
+patch is in /patches/ as dontfail_when_arg_makeopts_V=0.patch
+---------
+// change or ensure ctrl+alt+backspace doesn't kill the server instantly without some kind of prompt or something.
+// I've accidentally killed it in archlinux while searching for mc's dir history key combination (ctrl+\)
+// $ xmodmap -pke | grep BackSpace
+// keycode  22 = BackSpace BackSpace BackSpace BackSpace NoSymbol NoSymbol Terminate_Server
+// 
+// https://bbs.archlinux.org/viewtopic.php?id=70696
+// 
+//        Option "DontZap"  "boolean"
+//               This  disallows the use of the Terminate_Server XKB action (usu‐
+//               ally on Ctrl+Alt+Backspace, depending on XKB options).  This ac‐
+//               tion  is  normally used to terminate the Xorg server.  When this
+//               option is enabled, the action has no effect.  Default: off.
+// from 'man 5 xorg.conf'
+// #see: man 1 xorg  search DontZap
+// patching it now... https://paste.debian.net/1132265/ also called /patches/portage/x11-base/xorg-server/delayed_zap.patch
+-------
+// done: https://github.com/mgorny/installkernel-gentoo/issues/2 https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=951424
+// report the debianutils bug, but first retest if it's still true
+// [1] https://salsa.debian.org/debian/debianutils/blob/master/installkernel#L44-49
+// sys-apps/debianutils-4.9.1
+// see /patches/portage/sys-apps/debianutils/symlinks_update.patch
+// testcase:
+// $ l b d
+// lrwxrwxrwx 1 user user 1 19.01.2020 03:19 b -> a*
+// lrwxrwxrwx 1 user user 1 19.01.2020 03:19 d -> c
+// (the d symlink points to non-existing 'c' file)
+// $ test -f b -a -L b; echo $?
+// 0
+// $ test -f d -a -L d; echo $?
+// 1
+// -L and -h are the same, supposedly. (testing for symlinks)
+// -f will fail if the symlink points to non-existing file/dir
+// hence why the first 'if' in [1] will fail, and thus not update the existing broken symlink.
+------
+find out why this happened:
+ * Messages for package dev-qt/qtcore-5.14.0:
+ * Log file: /tmp/ebuild.logs/build/dev-qt/qtcore-5.14.0:20200119-015234.log
+
+ * Generated gentoo-qconfig.h is empty
+
+ * Messages for package dev-qt/qttest-5.14.0:
+ * Log file: /tmp/ebuild.logs/build/dev-qt/qttest-5.14.0:20200119-015522.log
+
+ * Generated gentoo-qconfig.h is empty
+------
+see if the song
+The Zombies - Any Other Way
+sounds like
+Toni Braxton - Un-Break My Heart
+or
+Chris DeBurgh - Lady In Red
+or wut
+-------
+fix gstreamer & co. properly to work with latest 'make'
+https://bugs.gentoo.org/705974#c11
+-------
+take a look: https://www.gentoofan.org/gentoo/misc/40_custom
+------
+
+after you put the gentoo2/ config files, at the end, check/compare them with the gentoo/ oones because I'm sure I haven't taken all old gentoo/ configs over to the new gentoo2/  , this being gentoo3 an on i87k too!
+dirs:
+/home/user/1TODO/gentoo_usb/q1q/system/Z575/OSes/gentoo2/
+/home/user/1TODO/gentoo_usb/q1q/system/Z575/OSes/gentoo/
+^ on z575
+
+for example: /etc/fail2ban/ dir exists only in gentoo/ not in gentoo2/ !!!!!
+-----
+looks like I've to replace keepassx(archlinux) with app-admin/keepassxc because keepassx doesn't exist on gentoo (probably because it's 2years outdated!)
+--------
+maybe make a bug report asking for a feature to not ask if already fetched, eg:
+# time emerge -nav app-portage/mirrorselect --fetchonly
+
+These are the packages that would be fetched, in order:
+
+Calculating dependencies... done!
+[ebuild  N     ] net-analyzer/netselect-0.4-r1::gentoo  USE="-ipv6" 0 KiB
+[ebuild  N     ] dev-util/dialog-1.3.20191210:0/15::gentoo  USE="unicode -examples -minimal -nls -static-libs" 0 KiB
+[ebuild  N     ] app-portage/mirrorselect-2.2.6-r1::gentoo  USE="-ipv6" PYTHON_TARGETS="python3_6 -python3_7 -python3_8" 0 KiB
+
+Total: 3 packages (3 new), Size of downloads: 0 KiB
+
+Would you like to fetch the source files for these packages? [Yes/No] n
+
+Quitting.
+------------
+// actually nevermind  this is not relevant: Warning: No mirrors available for file '.layout.conf.mirrors.evowise.com'
+// 
+// report bug that --fetchonly and --pretend is weird:
+// 
+// # time emerge -nav hexchat --fetchonly -p
+// 
+// These are the packages that would be fetched, in order:
+// 
+// Calculating dependencies... done!
+// 
+// Warning: No mirrors available for file '.layout.conf.mirrors.evowise.com'
+// https://mirrors.evowise.com/gentoo/distfiles/dbus-glib-0.110.tar.gz Warning: No mirrors available for file '.layout.conf.mirror.dkm.cz'
+// https://mirror.dkm.cz/gentoo/distfiles/dbus-glib-0.110.tar.gz Warning: No mirrors available for file '.layout.conf.ftp.fau.de'
+// https://ftp.fau.de/gentoo/distfiles/dbus-glib-0.110.tar.gz Warning: No mirrors available for file '.layout.conf.linux.rz.ruhr-uni-bochum.de'
+// https://linux.rz.ruhr-uni-bochum.de/download/gentoo-mirror/distfiles/dbus-glib-0.110.tar.gz Warning: No mirrors available for file '.layout.conf.gentoo.wheel.sk'
+// https://gentoo.wheel.sk/distfiles/dbus-glib-0.110.tar.gz 
+// 
+// Warning: No mirrors available for file '.layout.conf.mirrors.evowise.com'
+// https://mirrors.evowise.com/gentoo/distfiles/libnotify-0.7.8.tar.xz Warning: No mirrors available for file '.layout.conf.mirror.dkm.cz'
+// https://mirror.dkm.cz/gentoo/distfiles/libnotify-0.7.8.tar.xz Warning: No mirrors available for file '.layout.conf.ftp.fau.de'
+// https://ftp.fau.de/gentoo/distfiles/libnotify-0.7.8.tar.xz Warning: No mirrors available for file '.layout.conf.linux.rz.ruhr-uni-bochum.de'
+// https://linux.rz.ruhr-uni-bochum.de/download/gentoo-mirror/distfiles/libnotify-0.7.8.tar.xz Warning: No mirrors available for file '.layout.conf.gentoo.wheel.sk'
+// https://gentoo.wheel.sk/distfiles/libnotify-0.7.8.tar.xz https://download.gnome.org/sources/libnotify/0.7/libnotify-0.7.8.tar.xz 
+// 
+// Warning: No mirrors available for file '.layout.conf.mirrors.evowise.com'
+// https://mirrors.evowise.com/gentoo/distfiles/hexchat-2.14.3.tar.xz Warning: No mirrors available for file '.layout.conf.mirror.dkm.cz'
+// https://mirror.dkm.cz/gentoo/distfiles/hexchat-2.14.3.tar.xz Warning: No mirrors available for file '.layout.conf.ftp.fau.de'
+// https://ftp.fau.de/gentoo/distfiles/hexchat-2.14.3.tar.xz Warning: No mirrors available for file '.layout.conf.linux.rz.ruhr-uni-bochum.de'
+// https://linux.rz.ruhr-uni-bochum.de/download/gentoo-mirror/distfiles/hexchat-2.14.3.tar.xz Warning: No mirrors available for file '.layout.conf.gentoo.wheel.sk'
+// https://gentoo.wheel.sk/distfiles/hexchat-2.14.3.tar.xz 
+// 
+// real	0m1.740s
+// user	0m1.662s
+// sys	0m0.065s
+---------
+
+see /etc/udev/rules.d/10-network.rules
+net_setup_link doesn't work on Gentoo (15feb2020)  
+--------
+get patches from clearlinux into kernel:
+https://github.com/clearlinux-pkgs/linux
+write this into Gentoo's todo! 
+-------
+fix this in 'mc' of gentoo (probably in ~/.config/mc ?), when F3 on a *.patch file, mc's error window shows:
+/tmp/mc-user/mcextV4THG0: line 14: /usr/lib/mc/ext.d/misc.sh: No such file or directory
+actual location on Gentoo is: /usr/libexec/mc/ext.d/misc.sh
+------
+
+check these urls:
+https://wiki.gentoo.org/wiki/Logcheck
+https://wiki.gentoo.org/wiki/Security_Handbook/Logging#Syslog-ng
+https://wiki.gentoo.org/wiki/Syslog-ng
+https://web.archive.org/web/20161107062914/http://gentoo-en.vfose.ru/wiki/Build_Your_Own_LiveCD_or_LiveDVD
+https://wiki.gentoo.org/wiki/Catalyst
+https://gitweb.gentoo.org/proj/releng.git/tree/releases/weekly/specs/amd64
+
+https://wiki.gentoo.org/wiki/Kernel/Removal
+https://wiki.gentoo.org/wiki/Kernel/Gentoo_Kernel_Configuration_Guide
+https://wiki.gentoo.org/wiki/Handbook:AMD64/Installation/Bootloader#Configure
+https://wiki.archlinux.org/index.php/GRUB/Tips_and_tricks#Multiple_entries
+https://wiki.archlinux.org/index.php/User:Eschwartz/Grub#Write_the_configuration_from_scratch
+https://wiki.gentoo.org/wiki/GRUB2_Quick_Start
+https://gentoo.org/support/news-items/2018-01-30-portage-rsync-verification.html
+https://www.gentoo.org/news/2019/07/03/sks-key-poisoning.html
+https://wiki.gentoo.org/wiki/Fail2ban#Log_scanning
+gstreamer https://bugs.gentoo.org/705974#c15   https://bugs.gentoo.org/attachment.cgi?id=604048&action=diff
+https://wiki.gentoo.org/wiki/Genkernel#Microcode_loading
+https://wiki.gentoo.org/wiki/Handbook:AMD64/Working/Features#Fetching_files
+https://wiki.gentoo.org/wiki/Zram#Using_udev
+https://wiki.gentoo.org/wiki/Btrfs#Btrfs_hogging_memory_.28disk_cache.29
+https://wiki.gentoo.org/wiki/Binary_package_guide
+https://www.gentoo.org/support/security/
+https://wiki.gentoo.org/wiki/Security_Handbook
+https://wiki.gentoo.org/wiki/Project:Portage/Repository_Verification#Security_comparison
+https://www.gentoo.org/glep/glep-0074.html#timestamp-verification
+https://wiki.gentoo.org/wiki/Portage_Security
+qlop or genlop ? https://wiki.gentoo.org/wiki/Genlop
+https://wiki.gentoo.org/wiki/GCC_optimization
+https://wiki.gentoo.org/wiki/Kernel_Crash_Dumps
+
+https://www.ansible.com/resources/videos/quick-start-video
+https://www.ansible.com/resources/webinars-training/introduction-to-ansible
+https://blog.jameskyle.org/2014/08/automated-stage3-gentoo-install-using-ansible/
+https://github.com/jameskyle/ansible-gentoo
+https://github.com/bcoe/librarian-ansible
+https://github.com/hercules-team/rust-augeas
+https://augeas.net/tour.html
+https://puppet.com/docs/puppet/5.5/puppet_index.html
+https://github.com/binary-manu/arch-ansible
+https://github.com/ansible/ansible-examples/blob/master/language_features/prompts.yml
+https://wiki.gentoo.org/wiki/Ansible
+https://wiki.gentoo.org/wiki/Puppet
+https://arstechnica.com/information-technology/2015/08/how-security-flaws-work-the-buffer-overflow/
+
+EVCS_OFFLINE https://devmanual.gentoo.org/eclass-reference/golang-vcs.eclass/index.html
+----------
+make the -9999 packages (git)fetch via portage --fetchonly just like it happens for SRC_URI, instead of fetching during src_unpack!!!! therefore it will work with userpriv ( and -userfetch ), else unpack thus git fetch is attempted as user 'portage' which will fail because owner is 'root' and want to keep it as such!
+-------
+
+don't forget to add /home/user/bin/fox as preferred browser in settings (for xfce4 at least) or else it will run firefox outside of bubblewrap aka bwrap(command)
+this means it won't work anymore to open links via RMB->menu->Open Link, or by LMB somehow, because 'fox' aka firefox won't sense that another one is running, and can't communicate with it to tell it to open that link in the existing browser, so it will attempt to start a new browser instance!
+---------
+fix bash ebuild to use bash's internal readline?
+or, use a bash-9999 ebuild from some overlay?
+and the apply all my patches
+------
+make --fetch-only also work just as the normal --fetchonly
+because:
+emerge: error: unrecognized arguments: --fetch-only
+------
+may want to remove some patches from /patches/portage/dev-libs/check-0.15.1
+as they don't really apply on gentoo! those libcheck version ones!
+plus they require me to make changes every time 'check' is updated!
+------
+keep only one of the 2 patches for 16 bit thingy, otherwise they both get applied (one with fuzz 2 !!!):
+$ l /patches/portage/sys-kernel/gentoo-sources.reused/*16bit*
+-rw-r--r-- 1 root root 2545 10.05.2019 19:24 /patches/portage/sys-kernel/gentoo-sources.reused/4900_instruction_not_supported_in_16bit_mode.patch
+-rw-r--r-- 1 root root 3218 20.10.2020 20:21 /patches/portage/sys-kernel/gentoo-sources.reused/6400_instruction_not_supported_in_16bit_mode.patch
+-rw-r--r-- 1 root root 3235 07.05.2021 14:00 /patches/portage/sys-kernel/gentoo-sources.reused/4900_instruction_not_supported_in_16bit_mode_ufk_5_12_1.patch
+// */
+------
+make sure emerge patches only with fuzz 0! don't allow fuzz 2(which is what's happening now, as per 'patch' command allows it!)
+
+see file /usr/lib/portage/python3.9/phase-helpers.sh at line 996 +-
+------
+do I need net-misc/bridge-utils  for virtualbox ? as the install msg recommends.
+
+------
+get some?
+ * Messages for package app-arch/xarchiver-0.5.4.17:
+
+ * You need external programs for some formats, including:
+ * 7zip - app-arch/p7zip
+ * arj - app-arch/arj
+ * lha - app-arch/lha
+ * lzop - app-arch/lzop
+ * rar - app-arch/unrar app-arch/rar
+ * zip - app-arch/unzip app-arch/zip
+------
+probably want pulseeffects
+------
+so these need explicit turn off of binaries, but shouldn't this be implied? maybe patch portage to be so?
+# emerge @preserved-rebuild --getbinpkg=n --usepkg=n
+# revdep-rebuild -- --getbinpkg=n --usepkg=n
+relevants: https://bugs.gentoo.org/716798
+tangential: https://bugs.gentoo.org/693274#c1
+------
+get an X locker like x11-misc/slock
+or see list: emerge --search xlock
+and then make sure 'monoff' script of ~/bin/ does refer to it
+then assign winkey+L and ctrl+alt+l and +m to run 'monoff'
+------
+dnsmasq reports ipv6 was compiled in:
+May  8 17:24:14 dnsmasq[628456]: compile time options: IPv6 GNU-getopt DBus no-UBus no-i18n no-IDN no-DHCP no-Lua no-TFTP conntrack ipset no-auth no-cryptohash no-DNSSEC no-ID loop-detect inotify no-dumpfile
+
+but USE flags say -ipv6 was used:
+# equery u dnsmasq
+ - - ipv6                     : Add support for IP version 6
+
+see why and possibly report! well, nevermind:
+"Remove ability to compile without IPv6 support." Date:   Tue Oct 23 22:10:17 2018 +0100  commit ee8750451b49d27b180517a4e35b636be0fae575
+I guess maybe it would need ipv6 USE flag to be removed from the dnsmasq Gentoo package - that doesn't work because dhcp6 aka contrib/lease-tools/dhcp_release6 is gonna be or not installed based on USE=ipv6
+------
+qterminal dejavu sans mono 11pt at prompt(bottommost) won't show underscore, but Cousie 11pt will.
+------
+lingering purple dots:
+do 'man 3 fstat' then press PgDn twice, look under EIO that's 1 dot, another 5cm below! from the prev. page's underline!
+under qterminal!
+font is: Cousine 11
+have installed(yes it does matter!):
+media-fonts/alee-fonts
+media-fonts/arphicfonts
+media-fonts/cantarell
+media-fonts/croscorefonts
+media-fonts/dejavu
+media-fonts/droid
+media-fonts/farsi-fonts
+media-fonts/inconsolata
+media-fonts/inconsolata-hellenic
+media-fonts/inconsolata-lgc
+media-fonts/ja-ipafonts
+media-fonts/lohit-tamil
+media-fonts/noto
+media-fonts/takao-fonts
+media-fonts/thaifonts-scalable
+media-fonts/wqy-microhei
+media-fonts/wqy-zenhei
+in @world
+
+------
+nvm my bad //
+//  in kernel 5.13.1 CONFIG_UML is unknown symbol and thus '! UML' in 'make nconfig' doesn't yield 'true' so some options are invisible, like CONFIG_SND_HDA_PREALLOC_SIZE which has:
+//Depends on: SOUND [=y] && !UML && SND [=y]
+//Visible if: SOUND [=y] && !UML && SND [=y] && !SND_DMA_SGBUF [=y]
+//oh wait... ! SND_DMA_SGBUF is false because SND_DMA_SGBUF=y, I thought [=y] is the result of !SND_DMA_SGBUF but it's of just SND_DMA_SGBUF! so it's not the UML thing!, so, nevermind!
+//it's 'unknown' in 5.12.13 too aka linux-5.12.13-gentoo, however it's visible there due to no visible rule hmmm.... so it only has Depends on: SOUND [=y] && !UML && SND [=y]
+
+------
+see why /proc/cmdline page_poison=1 breaks in 5.13.1 vs 5.12.13 so that it keeps spamming with dumped zero pages reason: "page dumped because: pagealloc: corrupted page details"
+so page_poison=0 is workaround so far. FIXME: re-enable that
+thus setting init_on_free=1 since page_poison=0 now!
+  see /etc/default/grub
+well apparently[1] it is obsolete in 5.13.1 now.
+[1] https://www.phoronix.com/forums/forum/software/general-linux-open-source/1264763-kernel-5-13-0-memory-corruption
+not necessarily, see comments in /etc/default/grub
+------
+long time 'git':
+
+$ time git commit -a
+fatal: Unable to create '/var/db/repos/localrepo/.git/index.lock': Permission denied
+^C^C^C^C^C^C
+
+real    2m51.548s
+user    0m0.001s
+sys     0m0.127s
+------
+use patch2 function code from /home/user/bin/binprio/patch and apply it for emerge patching (in some eclass) so that timestamps of patched files are preserved to avoid causing useless recompilations on re-emerging eg. gentoo-sources
+------
+
+!!!!!! emerge @preserved-rebuild SHOULD FORCE IMPLY: --getbinpkg=n --usepkg=n
+
+OR ELSE:
+
+[i87k ~]# emerge @preserved-rebuild
+
+These are the packages that would be merged, in reverse order:
+
+Calculating dependencies  ... done!
+[binary   R    ] net-libs/libasyncns-0.8-r4-2
+
+!!! The following binary packages have been ignored due to non matching USE:
+
+    =sys-apps/busybox-1.33.1 -pam
+    =sys-apps/busybox-1.33.1 -pam
+
+NOTE: The --binpkg-respect-use=n option will prevent emerge
+      from ignoring these binary packages if possible.
+      Using --binpkg-respect-use=y will silence this warning.
+
+Would you like to merge these packages? [Yes/No] n
+
+Quitting.
+
+[i87k ~]# emerge @preserved-rebuild --getbinpkg=n
+
+These are the packages that would be merged, in reverse order:
+
+Calculating dependencies  .... done!
+[binary   R    ] net-libs/libasyncns-0.8-r4-2
+
+!!! The following binary packages have been ignored due to non matching USE:
+
+    =sys-apps/busybox-1.33.1 -pam
+    =sys-apps/busybox-1.33.1 -pam
+
+NOTE: The --binpkg-respect-use=n option will prevent emerge
+      from ignoring these binary packages if possible.
+      Using --binpkg-respect-use=y will silence this warning.
+
+Would you like to merge these packages? [Yes/No] n
+
+Quitting.
+
+[i87k ~]# emerge @preserved-rebuild --getbinpkg=n --usepkg=n
+
+These are the packages that would be merged, in reverse order:
+
+Calculating dependencies  .... done!
+[ebuild   R    ] net-libs/libasyncns-0.8-r4
+------
+28 may 2022
+--group-directories-first
+  alias l='ls -rlat --group-directories-first'
+  TODO: find out why --group-directories-first is implied as user 'user' but not as 'root'
+------
+add ~/.gdbinit into /etc/gdb/gdbinit (which is 0 bytes atm)
+------
+------
+
+// keep this last(insert TODOs above):
+// thanks <telemachus> on #vim freenode irc, for a filetype that's not .c or .cpp which ale would yell/error on:
+// vim: set ft=javascript:

@@ -1,0 +1,1908 @@
+* incorrect udp checkums ? (seen with tcpdump) with software from within virtualbox
+  \ fix: ethtool --offload eth0 rx off tx off ; ethtool -K eth0 gso off
+  \ ^ apparently this works even when you get networking freezes right after you get 'Detected Tx Unit Hang' within virtualbox. - either that, or it just got better by itself. (but for example you couldn't even navigate in make nconfig due to the network delay/lags)
+  \ within the virtualbox guest OS
+  \ src: http://ubuntuforums.org/showthread.php?t=1940190
+  \ see also: https://bugzilla.kernel.org/show_bug.cgi?id=47331#c30
+  \ which suggests this(didn't try yet): ethtool -s eno1 speed 100 duplex full
+
+* how to echo(or use) escape chars without using echo -e
+  \ echo -e '\n'
+  \ echo $'\n'
+
+* don't update samsung ssd 840 evo 's firmware to EXT0DB6Q  (currently still EXT0BB6Q) even though the intermediary EXT0CB6Q apparently is working as reported here: http://www.overclock.net/t/1507897/samsung-840-evo-read-speed-drops-on-old-written-data-in-the-drive/2660
+  \ motherlode src: https://bugs.launchpad.net/ubuntu/+source/fstrim/+bug/1449005
+  \ TODO: actually I've already updated, double check !
+
+* the 3 sec delay when login password is wrong is in /etc/login.defs as FAIL_DELAY 3
+  \ this doesn't affect wrong password for sudo (delay 3 sec also)
+
+- kernel 4.2.0 rc2 (tag) crashes system when startx inside a virtualbox (4.3.26) so you should update to the immediate commits after it (specifically this: 4.2.0-rc2-g97d6e2b) - tested to not crash anymore.
+  \ NOPE: it still OOPSes after a few minutes... so maybe that didn't get fixed at all!
+
+
+* to force kernel to reread partition (sfdisk -R  doesn't work anymore)
+  \ sudo blockdev --rereadpt /dev/sde
+
+* when dd-ing manjaro iso to the usb stick card reader(on the 4g sd ms pro duo):
+  \ $ time sudo dd if=./manjaro-xfce-15.12-x86_64.iso of=/dev/sdc bs=6M
+  \ Password: 
+  \ 244+1 records in
+  \ 244+1 records out
+  \ 1537474560 bytes (1.5 GB) copied, 289.137 s, 5.3 MB/s
+  \
+  \ real  5m18.005s
+  \ user  0m0.030s
+  \ sys 0m23.307s
+
+* when dd-ing the gentoo admincd iso to the usb stick or card reader:
+  * $ sudo dd if=admincd-amd64-20150910.iso of=/dev/sde bs=6M
+    \ 404750336 bytes (405 MB) copied, 75.8235 s, 5.3 MB/s
+  * $ sudo blockdev --rereadpt /dev/sde
+    \ needed so that lsblk sees the right partitions after the dd-ing above.
+    \ that is the equivalent of: sfdisk -R (which nolonger works; its man does say about blockdev)
+
+
+* telinit q (or Q) will tell init to re-read /etc/inittab
+  \ run only as root(or sudo) else telinit is not even in path
+
+
+* if you have the segfault line in the log (eg. dmesg) then
+  \ http://coredump.io/blog/2012/02/23/debugging-segfaults-from-logs-to-gdb/
+  \ also can use this hex calculator for the difference: http://www.miniwebtool.com/hex-calculator/
+  \ gdb / info symbol
+
+* If you have something like this nf_send_reset+0x3a/0x140 and you want to gdb
+  \ see: https://bugzilla.kernel.org/show_bug.cgi?id=97631#c0
+  \ the key is: (gdb) list *nf_send_reset+0x3a
+  \ it should list the source code next.
+  \ eg. 3: /usr/lib64/xorg/modules/drivers/vboxvideo_drv.so (0x3448d39e000+0x839c) [0x3448d3a639c]
+  \ gdb /usr/lib64/xorg/modules/drivers/vboxvideo_drv.so
+  \ list *0x839c
+  \ works, shows:
+  \ 0x839c is in VBoxVideoGetVRAMSize() (/usr/include/xorg/compiler.h:381).
+  \ 381     __asm__ __volatile__("inl %1,%0":"=a"(ret):"d"(port));
+  \ which is called here: /usr/src/debug/x11-drivers/xf86-video-virtualbox-5.0.2/VirtualBox-5.0.2/src/VBox/Additions/x11/vboxvideo/vboxvideo.c:906
+  \ 906     pVBox->cbFBMax = VBoxVideoGetVRAMSize();
+  \ that's why startx segfaults above, because of that 'Disable privileged I/O' CONFIG_GRKERNSEC_IO
+  \ ok "fix" by disabling that option!
+
+
+* (gentoo)startx also segfaults when grsec is enabled(not RBAC tho), 
+  \ even though I have that I/O patch which adds -hwaccess flag
+  \ ...
+  \ [ 2074.742883] grsec: denied resource overstep by requesting 21 for RLIMIT_NICE against limit 0 for /usr/bin/xinit[xinit:24835] uid/euid:1000/1000 gid/egid:1000/1000, parent /usr/bin/startx[startx:24819] uid/euid:1000/1000 gid/egid:1000/1000
+  \ ...
+  \ [ 2075.022772] grsec: denied use of ioperm() by /usr/bin/Xorg[X:24836] uid/euid:1000/0 gid/egid:1000/1000, parent /usr/bin/xinit[xinit:24835] uid/euid:1000/1000 gid/egid:1000/1000
+  \ what looks like in Xorg.0.log :
+  \ [  2075.036] (EE) 
+  \ [  2075.037] (EE) Backtrace:
+  \ [  2075.038] (EE) 0: /usr/bin/X (xorg_backtrace+0x80) [0x20554cfe60]
+  \ [  2075.038] (EE) 1: /usr/bin/X (0x20552e1000+0x1f3ee0) [0x20554d4ee0]
+  \ [  2075.039] (EE) 2: /lib64/libc.so.6 (0x3c844fbb000+0x34920) [0x3c844fef920]
+  \ [  2075.039] (EE) 3: /usr/lib64/xorg/modules/drivers/vboxvideo_drv.so (0x3c840fa8000+0x839c) [0x3c840fb039c]
+  \ [  2075.040] (EE) 4: /usr/lib64/xorg/modules/drivers/vboxvideo_drv.so (0x3c840fa8000+0x6391) [0x3c840fae391]
+  \ [  2075.040] (EE) 5: /usr/bin/X (InitOutput+0xab8) [0x205538add8]
+  \ [  2075.041] (EE) 6: /usr/bin/X (0x20552e1000+0x5c11e) [0x205533d11e]
+  \ [  2075.041] (EE) 7: /lib64/libc.so.6 (__libc_start_main+0x114) [0x3c844fdb954]
+  \ [  2075.042] (EE) 8: /usr/bin/X (_start+0x29) [0x2055324349]
+  \ [  2075.042] (EE) 
+  \ [  2075.043] (EE) Segmentation fault at address 0x0
+  \ [  2075.043] (EE) 
+  \ Fatal server error:
+  \ [  2075.044] (EE) Caught signal 11 (Segmentation fault). Server aborting
+  \ [  2075.044] (EE) 
+  * looks like that X patch(xorg-nohwaccess.patch) isn't doing its job, because without the 'Disable privileged I/O' CONFIG_GRKERNSEC_IO it works, startx works.
+    \ but that polkitd still crashes (unrelate tho)
+    \ [  305.996534] grsec: exec of /usr/libexec/dbus-daemon-launch-helper (/usr/libexec/dbus-daemon-launch-helper org.freedesktop.PolicyKit1 ) by /usr/libexec/dbus-daemon-launch-helper[dbus-daemon:9907] uid/euid:101/101 gid/egid:246/246, parent /usr/bin/dbus-daemon[dbus-daemon:9906] uid/euid:101/101 gid/egid:246/246
+    \ [  306.019402] grsec: exec of /usr/lib64/polkit-1/polkitd (/usr/lib/polkit-1/polkitd --no-debug ) by /usr/lib64/polkit-1/polkitd[dbus-daemon-lau:9907] uid/euid:0/0 gid/egid:0/0, parent /usr/bin/dbus-daemon[dbus-daemon:9906] uid/euid:101/101 gid/egid:246/246
+    \ [  306.062775] grsec: chdir to /var/lib/polkit-1 by /usr/lib64/polkit-1/polkitd[polkitd:9907] uid/euid:102/102 gid/egid:245/245, parent /usr/bin/dbus-daemon[dbus-daemon:9906] uid/euid:101/101 gid/egid:246/246
+    \ [  306.131069] grsec: denied RWX mmap of <anonymous mapping> by /usr/lib64/polkit-1/polkitd[polkitd:9907] uid/euid:102/102 gid/egid:245/245, parent /usr/bin/dbus-daemon[dbus-daemon:9906] uid/euid:101/101 gid/egid:246/246
+    \ [  306.131281] polkitd[9907]: segfault at 10 ip 000003df5dab0ce7 sp 000003f375186890 error 4 in libpthread-2.21.so[3df5daa7000+18000]
+    \ [  306.131351] grsec: Segmentation fault occurred at 0000000000000010 in /usr/lib64/polkit-1/polkitd[polkitd:9907] uid/euid:102/102 gid/egid:245/245, parent /usr/bin/dbus-daemon[dbus-daemon:9906] uid/euid:101/101 gid/egid:246/246
+    \ [  306.131764] grsec: bruteforce prevention initiated due to crash of /usr/lib64/polkit-1/polkitd against uid 102, banning suid/sgid execs for 15 minutes.  Please investigate the crash report for /usr/lib64/polkit-1/polkitd[polkitd:9907] uid/euid:102/102 gid/egid:245/245, parent /usr/bin/dbus-daemon[dbus-daemon:9906] uid/euid:101/101 gid/egid:246/246
+    \ polkitd crashing is fixed: https://bugs.gentoo.org/show_bug.cgi?id=559436
+    \ ^ was because lacking kernel config option: CONFIG_PAX_PT_PAX_FLAGS
+
+* (gentoo)polkitd segfaults when grsec is enabled(not RBAC tho), in Symbol "pthread_mutex_lock" is at 0x9cd0 + 23 (aka 0x9ce7) in /lib64/libpthread-2.21.so
+  \ see above
+
+* this happens with apparently no bad effects:
+  \ [ 2926.973983] grsec: From 10.0.2.2: denied RWX mmap of <anonymous mapping> by /usr/lib64/python-exec/python3.4/portageq[portageq:25050] uid/euid:0/0 gid/egid:0/0, parent /usr/bin/gcc-config[gcc-config:25049] uid/euid:0/0 gid/egid:0/0
+
+
+
+* to emerge a binary package(eg. that was saved by emerge before upgrading it to a newer version)
+  \ time emerge -av --usepkgonly =firefox-39.0.3
+  \ Note existing file: /usr/portage/packages/www-client/firefox-39.0.3.tbz2
+
+* good gentoo info
+  \ https://devmanual.gentoo.org/ebuild-writing/
+  \ https://devmanual.gentoo.org/eclass-reference/index.html
+
+
+* disable NMI selftest in kernel running inside virtualbox or it will panic on boot if you press any keys or mouse mouse(touchpad) - at least with hardened kernel 4.1.6-hardened-r1-g45b4b78
+  \ CONFIG_DEBUG_NMI_SELFTEST
+  \ to catch the exact panic msg (while in virtualbox) you might need to add the following to kernel cmdline: console=tty1,ttyS0,115200n8 earlyprintk=vga,serial,ttyS0,115200,keep
+  \ ^ but beware you will get hung tasks due to the slow printf to serial, eg. NMI watchdog: BUG: soft lockup - CPU#3 stuck for 23s! [kworker/3:1:44]
+  \ ^ "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+
+
+* emerge with grsec on gentoo hardened will not work... /bin/sh: bad interpreter: Permission denied
+  \ eg.
+  \ >>> Unpacking VirtualBox-5.0.2.tar.bz2 to /var/tmp/portage/app-emulation/virtualbox-guest-additions-5.0.2/work
+  \ /var/tmp/portage/app-emulation/virtualbox-guest-additions-5.0.2/temp/environment: /var/tmp/portage/app-emulation/virtualbox-guest-additions-5.0.2/work/VirtualBox-5.0.2/src/VBox/Additions/linux/export_modules: /bin/sh: bad interpreter: Permission denied
+  * to fix:
+    \ https://forums.gentoo.org/viewtopic-t-971312-start-0.html
+    * this is the TPE's fault, see kernel.grsecurity.tpe sysctl option or kernel config, either disable TPE or add the portage user to that tpe group... more info inside ./5gentoo_vm_hardened.wofl
+
+* failed to mount root at boot? - it's grub2-mkconfig not having SEEN an initramfs image! see /etc/grub.d/10_linux script because you probably used a wrong --kernname=genkernel  name!
+  \ [  246.198391] VFS: Cannot open root device "mapper/vgall-rootlvol" or unknown-block(0,0): error -6
+  \ [  246.458353] Please append a correct "root=" boot option; here are the available partitions:
+  \ ...
+  \ [  247.638880] DEBUG_BLOCK_EXT_DEVT is enabled, you need to specify explicit textual name for "root=" boot option.
+  \ [  247.927275] Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
+  \ or it may take longer:
+  \ [  467.749741] ---[ end Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
+  * it's because --kernname=1genkernelgrsec passed to genkernel (either name too long, or that 1 is doing this, or I'm missing the point and it was something else! yep it's something else: grub2-mkconfig seeing only hardcoded filenames!; but another previous variant worked fine: --kernname=genkernelgrsec  so w/o that 1 in front! but this worked only because old filenames with initramfs-genkernel-* name existed in the boot folder and grub2-mkconfig used those! )
+    \ //this works: --kernname=ggrsec  (XXX: NOPE, it just used the initramfs-genkernel-* ones!)
+    \ or this works: --kernname=genkernel  (this is the only one that works!)
+    \ XXX: future note: I should've figured out why this didn't work in the first place, so it wouldn't've bitten me later. Don't let issues go unsolved! Always find root cause and thus make sure they are fully understood!
+    * ok now I've used --kernname=ggrsec and although it used to work before with 4.1.6-hardened-r1, it doesn't right now, with 4.1.6-hardened-r2; retrying...
+      \ removed any leftover 1genkernelgrsec files (3 of them) from /bewt
+      \ still the same.
+      \ [  466.074012] VFS: Cannot open root device "mapper/vgall-rootlvol" or unknown-block(0,0): error -6
+      \ [  466.314836] Please append a correct "root=" boot option; here are the available partitions:
+      \ [  466.538679] 103:00000   83886080 sda  driver: sd
+      \ [  466.679124]   103:80000       4096 sda1 25db916d-b655-435c-9fe4-031ea304accf
+      \ [  466.869295]   103:40000    1048576 sda2 ea1404b3-a5c9-4e2f-8f85-7fdaca31ff6f
+      \ [  467.049621]   103:c0000   82831360 sda3 7bfc903b-b394-4481-ac27-51abc031b3b6
+      \ [  467.234154] 103:20000  104857600 sdb  driver: sd
+      \ [  467.364389] 0b00         1048575 sr0  driver: sr
+      \ [  467.509133] DEBUG_BLOCK_EXT_DEVT is enabled, you need to specify explicit textual name for "root=" boot option.
+      \ [  467.746512] Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
+      \ [  467.749741] CPU: 2 PID: 1 Comm: swapper/0 Tainted: G             L  4.1.6-hardened-r2-g45b4b78 #1
+      \ [  467.749741] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006
+      \ [  467.749741]  ffffffff926097c3 0000000000000000 0000000000000000 0000000000008001
+      \ [  467.749741]  ffffc9000189bda8 ffffffff92044230 ffffffff926b0398 ffffffff928dd420
+      \ [  467.749741]  ffffc9000189be38 ffffffff92041446 ffffffff00000010 ffffc9000189be48
+      \ [  467.749741] Call Trace:
+      \ [  467.749741]  [<ffffffff92044230>] dump_stack+0x45/0x5d
+      \ [  467.749741]  [<ffffffff92041446>] panic+0xc7/0x20a
+      \ [  467.749741]  [<ffffffff9281579b>] mount_block_root+0x220/0x2b9
+      \ [  467.749741]  [<ffffffff92815888>] mount_root+0x54/0x5e
+      \ [  467.749741]  [<ffffffff928159c2>] prepare_namespace+0x130/0x16d
+      \ [  467.749741]  [<ffffffff928153de>] kernel_init_freeable+0x1e0/0x214
+      \ [  467.749741]  [<ffffffff9203ec90>] ? rest_init+0x80/0x80
+      \ [  467.749741]  [<ffffffff9203ec99>] kernel_init+0x9/0xf0
+      \ [  467.749741]  [<ffffffff920520be>] ret_from_fork+0x3e/0x70
+      \ [  467.749741]  [<ffffffff9203ec90>] ? rest_init+0x80/0x80
+      \ [  467.749741] Kernel Offset: 0x10800000 from 0xffffffff81000000 (relocation range: 0xffffffff80000000-0xffffffffbfffffff)
+      \ [  467.749741] ---[ end Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
+      * booting the previous kernel (-r1) still works fine.
+      - checking if the cause is the change that I made with 3000_avoid_a_warning.patch which changes arch/x86/include/asm/uaccess.h +112   although it shouldn't be(the cause)! (this recompiles whole kernel apparently, that's how deep it is; 39mins)
+        \ orig   : if (type != VERIFY_WRITE) {
+        \ patched: if ((type) != VERIFY_WRITE) {
+        \ orig gives this warning: ./arch/x86/include/asm/uaccess.h:112:14: warning: logical not is only applied to the left hand side of comparison [-Wlogical-not-parentheses]
+        \ in lib/iov_iter.c:844   if (unlikely(!access_ok(!rw, buf, len)))
+        \ hit when compiling lib/iov_iter.o
+        * but ofc that wasn't it!!
+      * recompiling old kernel to see if it still works (having already the .o files intact)
+        \ took 7m45s anyway
+        \ works!
+      - recompiling old kernel with a make clean(as root was) first
+        \ took: 43m1s
+        \ btw the command use was always this:
+        \ # time genkernel all --bootdir="/bewt" --install --symlink --no-splash --no-mountboot --makeopts="-j4 V=0" --no-keymap --lvm  --no-mdadm --no-dmraid --no-zfs --no-multipath --no-iscsi --disklabel --luks --no-gpg --no-netboot --no-unionfs --kernname=ggrsec --no-firmware --no-integrated-initramfs --compress-initramfs --compress-initrd --compress-initramfs-type=best --loglevel=5 --color --no-mrproper --no-clean --no-postclear --oldconfig
+        \ (also obviously did the grub2-mkconfig everytime so far!)
+        \ panic'd prolly because grub didn't see or add any initramfs to the grub.cfg
+      * so, thanks to iamben on #gentoo freenode irc for helping me realize that grub2-mkconfig wasn't finding my initramfs files!
+        \ the reason is in /etc/grub.d/10_linux which matches only initramfs-genkernel-* filenames! which means I should only use --kernname=genkernel  when invoking genkernel!
+
+
+
+* man fails with: could not launch PAGER: No such file or directory
+  \ https://bugs.gentoo.org/show_bug.cgi?id=559490
+
+- keep pulseaudio(inside virtualbox) on Analog Stereo Duplex (not Output) or else you get Dummy Output only the next time you restart.
+  \ although, looks like it worked ok regardless, on non-hardened(non-grsec) gentoo installation
+
+* no pulseaudio soundcard detected under hardened kernel with grsecurity enabled?
+  \ deselect CONFIG_GRKERNSEC_SYSFS_RESTRICT aka [ ] Sysfs/debugfs restriction
+  \ https://wiki.gentoo.org/wiki/Talk:PulseAudio#Keep_CONFIG_GRKERNSEC_SYSFS_RESTRICT_deselected_for_pulseaudio_to_..._work.
+
+* virtualbox videos won't start because of audio
+  \ select Intel HD Audio in virtualbox on host, in Settings->Audio->Audio Controller
+
+* pulseaudio inside virtualbox works but there's no sound heard on host
+  \ https://wiki.gentoo.org/wiki/Talk:PulseAudio#with_Virtualbox_5.0.0_sound_works_inside_guest_OS_but_is_not_heard_on_host_OS
+  * fixedme:
+    \ +      <AudioAdapter controller="AC97" driver="Pulse" enabled="true"/>
+    \ -      <AudioAdapter controller="AC97" codec="AD1980" driver="Pulse" enabled="true"/>
+    \ that extra codec=  prevents the sound from being heard on host, even though it works fine on guest(according to the observed gfx levels)!
+    \ this is inside the *.vbox file! (true for, at least, virtualbox 5.0.0 r101573)
+    \ tested on song: https://www.youtube.com/watch?v=73Jrq1sk8Y4
+    \ also when moving output volume sliders, sounds are being made automatically
+    \ Forgot to mention that the codec="AD1980" is added automatically by virtualbox when the virtual machine (Type: Linux version: Gentoo (64bit)) is created, on virtualbox 5.0.0 r101573 but not on a version 4.* virtualbox
+    \ Also worth noting that selecting Intel HD Audio(from the default ICH AC97) and then selecting back ICH AC97 will clear this codec flag and all is well. (OK must be pressed after each selection, ofc.) (This is in virtualbox on host, in Settings->Audio->Audio Controller ) 
+
+
+* youtube videos playing are delayed(even audio-wise: freezes) due to copying files (with mc for example; or even while compiling) even just through tmpfs drives.
+  \ so it's not a matter of cpu usage (unless it's btrfs lzma taking all cpu slices, or something like cli-sti during the compression, so to speak)
+  \ it's also not a matter of disk writing/syncing, since it happens between tmpfs drives (even just copying 23M of a package like cairo)
+  \ XXX: apparently works fine now, the next day that is.
+  \ may or may not be related to RCU which was supposedly disabled? which is good(?) - or rather, expert rcu settings was disabled.
+
+* copy/pasting into youtube comments not working in firefox?
+  * set dom.event.clipboardevents.enabled false
+    \ in about:config
+    \ src: http://merabheja.com/fix-can-not-paste-text-in-youtube-comments-using-mozilla/
+    \ TODO: this means that RightToClick isn't fucking working!!! since I had the same thing disabled with it! and had it run on all sites... so wtf.
+
+* gdb backtrace to file
+  \ src: https://blog.cryptomilk.org/2010/12/23/gdb-backtrace-to-file/
+  * set logging overwrite on
+  * set logging file gdb.bt
+  * set logging on
+  * set pagination off
+  * thread apply all bt full
+  * set logging off
+  * quit
+
+* undefined symbol vgaHWFreeHWRec  on startx in /var/log/Xorg.0.log
+  * switch to vanilla gcc and recompile x11-drivers/xf86-video-virtualbox
+
+
+* this chrome emerge took 59m49s
+  \ time emerge -av =www-client/google-chrome-unstable-47.0.2508.0_p1
+  \ 5 packages
+  \ inside grsec virtualbox (see 5gentoo_vm_hardened.wofl )
+
+* # time quickpkg chromium
+  \ www-client/chromium-47.0.2498.0
+  \ took 28m6s  (uses only 1 core btw)
+
+
+* time emerge -avK1 =chromium-47.0.2498.0
+  \ 37m50s hitting the disk (non-tmpfs)
+
+* chromium download link: https://commondatastorage.googleapis.com/chromium-browser-official/chromium-47.0.2508.0-lite.tar.xz
+  \ when emerge doesn't find it on any mirrors(404) for 3 days now, then that url will work just fine, download it in /usr/portage/distfiles/
+
+* emerging non ccached chromium www-client/chromium-47.0.2508.0
+  \ took: 1005m45s before ld being killed due to out of memory!
+  \ had no swap; was inside virtualbox; total RAM inside was MemTotal:       10809864 kB
+
+* after removing bin packages, update the ${PKGDIR}/Packages index by this command:
+  * emaint --fix binhost
+    \ it's instant
+
+* virtualbox causes startx to get into 720x400 (unsure about the last number) even though it passes through 800x600
+  \ this happens when View->Autoresize guest display (Host+G) is unselected!
+  * to fix: switch resolution to wanted (eg. 1024x768 via Start->Display ) then select the previously deselected: View-> Auto-resize guest display (Host+G), then deselect it again(or keep it selected whatever).
+    \ xrandr shows the first resolution as * and thus preferred.
+    \ XXX: caveat: you'll need to switch to 1024x768 again on next startx, since it's now 1024x690 for whatever reason(even with Auto-resize being deselected!
+
+
+* this fixes the frequent : Unable to unshare: EPERM
+  \ this happens inside a manually chroot-ed environment in which you run emerge/portage
+  \ workaround/fix: sysctl -w kernel.grsecurity.chroot_caps=0
+  \ in dmesg is probably this: [75212.656718] grsec: From 10.0.2.2: use of CAP_SYS_ADMIN in chroot denied for /root/admincd/source/usr/lib64/python-exec/python3.4/emerge[emerge:24096] uid/euid:0/0 gid/egid:0/0, parent /root/admincd/source/usr/lib64/python-exec/python3.4/emerge[emerge:4652] uid/euid:0/0 gid/egid:0/0
+  \ kernel.grsecurity.chroot_caps is kernel config option CONFIG_GRKERNSEC_CHROOT_CAPS:
+  \ "If you say Y here, the capabilities on all processes within a
+  \ chroot jail will be lowered to stop module insertion, raw i/o
+  \ system and net admin tasks, rebooting the system, modifying immutable
+  \ files, modifying IPC owned by another, and changing the system time.
+  \ This is left an option because it can break some apps.  Disable this
+  \ if your chrooted apps are having problems performing those kinds of
+  \ tasks.  If the sysctl option is enabled, a sysctl option with
+  \ name "chroot_caps" is created."
+
+* need isoinfo ? on manjaro  (or gentoo)
+  \ on manjaro, it's in package name: extra/cdrkit
+  \ on gentoo: app-cdr/cdrtools
+  * get isoinfo command which mc needs to see into .iso files
+    \ not cdrkit because it's built in 2013
+    \ well, it's better because files don't appear a+x
+    \ sudo pacman -S cdrkit
+    - sudo pacman -S cdrtools
+      \ built in feb 2016
+      \ all files look like a+x which is not what happens with cdrkit
+
+* swap sda with sdb?
+  \ src: https://ubuntuforums.org/showthread.php?t=966665&p=6083606#post6083606
+  * udev
+    * created a file called 10-local.rules in /etc/udev/rules.d
+      \ # If the kernel matches a device as sda, change it to sdb.
+      \ KERNEL=="sda", NAME="sdb"
+      \
+      \ # Vice versa.
+      \ KERNEL=="sdb", NAME="sda"
+
+* to scan/activate all logical volumes
+  \ vgchange -ay
+  \ no extra params needed
+* to deactivate all logical volumes
+  \ vgchange -an
+  \ no extra params needed
+
+* grub rescue shell commands:
+  \ https://www.gnu.org/software/grub/manual/html_node/GRUB-only-offers-a-rescue-shell.html
+  \ set, ls, set prefix=(hd0,1)/grub, set root=(hd0,1), insmod normal, normal
+  \ https://help.ubuntu.com/community/Grub2/Troubleshooting
+  \ dump, exit, normal, ls, cat, multiboot, chain, help, search, insmod, set, linux, unset
+  \ (help was definitely not available for me! maybe because it couldn't find the grub_bios partition that I've set aside for it? due to my chaning the protective MBR's 0xEE partition type to something else thus not seeing the GPT partitions where grub_bios one is)
+
+* workaround for my Lenovo Z575 BIOS not willing to boot from a disk with GPT
+  \ Device     Boot Start        End    Sectors   Size Id Type
+  \ /dev/sdb1  *        0          0          0     0B 10 OPUS
+  \ /dev/sdb2           1 1953525167 1953525167 931.5G ee GPT
+  \ it boots now!
+
+* Ctrl+4 (or Ctrl+Alt+4) causes core dump, in xfce4-terminal while at something like a prompt in emerge -nav
+  \ see if Alt key is needed; I remember this from long ago, and it was just Ctrl+4
+
+* no audio (no sound) in vlc on a .webm or .mkv file? then re-emerge vlc with USE=matroska  (yes really!)
+  \ https://github.com/rg3/youtube-dl/issues/7048
+
+* libreoffice
+  \ Total: 42 packages (41 new, 1 in new slot), Size of downloads: 257501 KiB
+  \ duration: mother of god this takes ages, wth! 
+  \ real  514m10.578s
+  \ user  1272m39.346s
+  \ sys 304m11.872s
+  \ until out of memory fail!!! 14G of tmpfs used!
+  \ tmpfs                        14G   14G   68M 100% /var/tmp/portage
+  \ re-emerging on disk(not tmpfs), naturally using ccache, 
+  \ duration: 51m27s (disk space used during compilation, in /var/tmp/portage/ : 21G)
+  \ NEXT-time emerge the git version, this way, ccache can be re-used during versions!
+  * TODO: or even better, don't use this at all!
+    * switch to using google docs
+
+
+* when emerge --update cannot find some files to download
+  \ either download them manually by finding them on google
+  \ OR some other you cannot find like openrc, from https://dev.gentoo.org/~williamh/dist/
+
+* fstrim on btrfs will trim less than free space reported by df
+  \ time sudo fstrim -v --all
+  \ /: 2.3 GiB (2464907264 bytes) trimmed
+  \ which is the diff between 67 and 65 in:
+  \ sudo btrfs filesystem df /
+  \ Data, single: total=67.01GiB, used=65.43GiB
+  \ System, single: total=4.00MiB, used=16.00KiB
+  \ Metadata, single: total=3.01GiB, used=1.29GiB
+  \ GlobalReserve, single: total=448.00MiB, used=0.00B
+  \ even though df reports:
+  \ /dev/mapper/vgall-rootlvol  392G   68G  324G  18% /
+  * this is not true when not using hardened and/or pax kernel!
+    \ time sudo fstrim -v --all
+    \ /: 356.2 GiB (382485479424 bytes) trimmed
+    \ real  0m32.533s
+    \ user  0m0.004s
+    \ sys 0m15.555s
+    \ sudo btrfs filesystem df /
+    \ Data, single: total=95.00GiB, used=41.52GiB
+    \ System, single: total=32.00MiB, used=16.00KiB
+    \ Metadata, single: total=3.00GiB, used=1.10GiB
+    \ GlobalReserve, single: total=384.00MiB, used=0.00B
+
+
+
+
+* fresh hardened-kernel compilation time
+  \ real 25m54.190s
+  \ user 56m6.213s
+  \ sys 9m24.217s
+
+* list all packages that won't get updated via emerge --update @world
+  \ equery l '*9999*'
+  \ for these you need to emerge -av !
+  * actually updating them all like this works nicely! (equery piped output changes to be nice, at the expense of not being able to grep search the original unpiped one which is useful in other cases(different args to equery, eg. equery u vim , can't grep that for descriptions, well, nevermind there's --no-pipe))
+    \ //time emerge -av `equery l '*9999*'`
+    \ //well, that doesn't work since it needs an '=' in front of each atom!! else, eg. !!! 'app-editors/vim-9999' is not a valid package atom.
+    \ so this works: time emerge -av `equery l '*9999*' | sed -e 's/^/=/g'`
+  * update anything else(as root ofc)  - gentoo system update (for searches)
+    \ time emerge --verbose --tree --update --deep --with-bdeps=y --changed-use --ask @world
+    \ DON'T forget this is a prerequisite: time emerge-webrsync -v -k
+
+
+
+* keeping this deselected in firefox: Use hardware acceleration when available
+  \ because 16fps is fastest (than 5 or 9 fps with hwaccel)
+  \ and because it may crash the radeon driver (like vlc does!)
+  \ also tested with non-hardened profile+kernel and firefox 43.0(recompiled with vanilla non-hardened(at this point) gcc)
+
+* fix this: The following REQUIRED_USE flag constraints are unsatisfied: exactly-one-of ( python_single_target_python3_4 python_single_target_python3_5 ) when emerging libreoffice-9999
+  \ this temp fix works:
+  \ # time PYTHON_SINGLE_TARGET="python3_4" emerge -nav =libreoffice-9999
+  \ But the permanent fix for this is: 
+  \ # vim /etc/portage/package.env
+  \ =app-office/libreoffice-9999 libreoffice.conf
+  \ 
+  \ # vim /etc/portage/env/libreoffice.conf
+  \ PYTHON_SINGLE_TARGET="python3_4"
+
+* rust.vim needs syntastic vim plugin!
+  \ # time PYTHON_SINGLE_TARGET="python3_4" emerge -nav =libreoffice-9999
+
+* emerging app-office/libreoffice-5.0.9999  (without debugging symbols! and non-hardened stuff) takes about 4.1gig in /var/tmp/portage
+  \ duration (with previous ccache hits):
+  \ real  42m19.836s
+  \ user  36m22.286s
+  \ sys 82m24.550s
+
+* xfdesktop without thunar USE flag won't be able to display desktop icons (only the ones from the minimized windows instead!)
+  \ untested! but believed to be so!
+  \ besides, I don't have thunar installed, only have pcmanfm instead! and this will make xfdesktop not work in the sense of displaying launcher icons on desktop!
+  \ apparently works only after a restart (that is, once set that option)
+
+* chromium suid root sandbox
+  \ https://chromium.googlesource.com/chromium/src/+/master/docs/linux_suid_sandbox.md
+
+
+- less
+  \ up/down keys don't work as they should while in / mode - they gen ESCOA, ESCOB
+  * auto-downgraded from 482 to 481 and it's fixed now!
+
+* make any iso bootable with isohybrid (that is, bootable from USB; since it was already bootable from CD/DVD)
+  \ just run: isohybrid file.iso
+  \ and it's modified in place to be bootable from USB
+  \ FIXME: doesn't work for memtest86+*.iso
+  * get memtest86+ bootable from USB from Linux (UNTESTED!!! I only used it from system-rescue-disc iso)
+    \ http://forum.canardpc.com/threads/28875-Linux-HOWTO-Boot-Memtest-on-USB-Drive
+
+
+* memtest86+ freezes at test 7 from 4096-6144(or something like that) address but only when using 2 cores (SMP)! (so it doesn't freeze in failsafe mode for example) - should work when using SMP with round robin cores (a setting there)
+  \ src: http://forum.canardpc.com/threads/84663-Memtest86-is-freezing-while-running-test-7
+  \ it's apparently memtest86+'s fault!!!
+  - (nope)possible fix(untested tho):
+    \ - Memtest freezes or my system crashes/reboots.
+    \ Check that you have USB legacy support disabled in your BIOS setup. Some
+    \ BIOSes have a bug in them that reports the reserved memory areas
+    \ incorrectly in the e820 memory map. This causes memtest to write over the
+    \ memory area used by the USB legacy support resulting in freezes or reboots.
+    * unfortunately I need that to boot memtest86+ !
+
+* syslinux's altmbr.bin files explanation
+  \ is here: https://github.com/yoshi314/multi-live-usb-configs/
+
+* unetbootin is once again proving to be a piece of junk!
+  \ no copying of .c32 files, nor updating/writing the mbr
+  \ who knows what else it didn't do!
+
+* how to crash chromium - Aw, Snap!
+  \ Received signal 8 FPE_INTDIV 7fe5168a5200
+  \ #10 0x7fe5166ba9f9 vpx_codec_decode
+  \ view this video: https://www.youtube.com/watch?v=2pbEarwdusc
+  \ this only works on my bugged CPU! Thanks AMD!
+  \ https://bugs.chromium.org/p/chromium/issues/detail?id=599899
+
+
+* how to add another IP:
+  \ ifconfig eth0:1 192.168.0.3
+  \ now you have eth0 192.168.0.2(supposedly) and eth0:1 192.168.0.3 !
+  \ src: man pure-ftpd
+  \ There's another way without adding a new virtual eth, and that's via 'ip addr'
+
+* how to dual push when 'git push' happens = push to two repositories when a git push happens!
+  \ src: https://stackoverflow.com/questions/14290113/git-pushing-code-to-two-remotes
+  * ensure you have an origin remote already
+    \ git remove -v show
+    \ eg. git@github.com:githubusernamehere/repohere.git
+  * re-add the same origin remote
+    \ eg. git remote set-url --add --push origin git@github.com:githubusernamehere/repohere.git
+    \ now  git remote -v show   will show the same thing as before! (this is expected/good!)
+    \ origin  git@github.com:githubusernamehere/repohere.git (fetch)
+    \ origin  git@github.com:githubusernamehere/repohere.git (push)
+  * add the new url(s) to the same origin remote
+    \ eg. git remote set-url --add --push origin git@notabug.org:githubusernamehere/repohere.git
+    \ now  git remote -v show  will show this url too:
+    \ origin  git@github.com:githubusernamehere/repohere.git (fetch)
+    \ origin  git@github.com:githubusernamehere/repohere.git (push)
+    \ origin  git@notabug.org:githubusernamehere/repohere.git (push)
+  * now git push will push to both
+    \ ssh key password will be requested twice!
+    * recommended command to use the first time(after repo(s) creation):
+      \ git push -u --all
+      \ you see something like this(for that -u --all combination!):
+      \ ..
+      \ Branch kerneltry1 set up to track remote branch kerneltry1 from origin.
+      \ Branch master set up to track remote branch master from origin.
+      \ Branch test_kernel_s_msr_write set up to track remote branch test_kernel_s_msr_write from origin.
+      \ ...
+      \ then: git push --tags
+    * subsequently use command: git push
+
+* check if site is enabling HSTS
+  \ curl -SsI "https://grc.com"
+  \ -S show error if fail
+  \ -s silent
+  \ -I only header
+  \ HSTS is supposedly set only for when talking https, not http! eg. try curl -SsI "grc.com" and you don't see it! src: https://www.chromium.org/hsts
+  * use chrome extension: https://github.com/redpois0n/hsts-everywhere-chrome (or my fork of it, if you're me and plan on using http only with firefox, never with chromium!)
+
+* python cheatsheet
+  \ https://www.newthinktank.com/2014/11/python-programming/
+  \ src: https://www.youtube.com/watch?v=N4mEzFDjqtA
+
+* battery charge/discharge thresholds  ie. how to charge until 80% and discharge only until 40%
+  \ https://askubuntu.com/questions/34452/how-can-i-limit-battery-charging-to-80-capacity
+  \ http://www.thinkwiki.org/wiki/Tp_smapi
+  \ see which is last and maybe get that one: # equery m app-laptop/tp_smapi
+  \ emerge it: # emerge -nav app-laptop/tp_smapi
+  \ emerge last one: # emerge -nav =app-laptop/tp_smapi-0.41-r1
+
+* test an in-progress pull request from github, on your locally cloned repo.
+  * first time
+    \ git clone therepo
+    \ cd therepo
+    \ git fetch origin pull/191/head
+    \ git checkout -b branchnamehere FETCH_HEAD
+  * for subsequent updates
+    \ git fetch origin pull/191/head && git merge FETCH_HEAD
+
+* in arch/manjaro pacstrap is in package arch-install-scripts (needed for playpen)
+  \ https://github.com/thestinger/playpen
+  * git clone https://github.com/thestinger/playpen.git
+  * sudo pacman -S arch-install-scripts
+  * git clone https://github.com/rust-lang/rust-playpen.git
+  * get .vimrc
+    * cp './system/Z575/OSes/gentoo/on_baremetal/filesystem_now/gentoo/home/myuser/.vimrc' ~/.vimrc
+  * compile playpen
+    * cd playpen 
+    * make
+    * cd ..
+  * cd rust-playpen
+    * init
+      * sudo ./init.sh
+    * run
+      * ./web.py
+  * get rust-playpen requirements for running web.py
+    * sudo pacman -S community/python-bottle community/python-pygments community/python-cherrypy
+  * get pull request as patch - DON'T FORGET TO MAKE A NEW BRANCH FIRST!
+    \ wget https://github.com/rust-lang/rust-playpen/pull/143.patch
+    * ensure git is configured - needed for git am
+      \ git config --global user.email "you@example.com"
+      \ git config --global user.name "Your Name"
+    * apply
+      \ git am 143.patch
+      * if failed
+        * look at failed patch
+          \ vim .git/rebase-apply/patch
+          \ :set syntax=diff
+        * see if it's only a matter of tabs vs spaces
+          \ %s/ctrl+i/    /g
+          \ worked for me
+          \ patch -Np1 -i .git/rebase-apply/patch
+        * git add the changes!
+          \ git add static/web.css static/web.js
+        * then continue
+          \ git am --continue
+      * oops forgot to make a new branch, make it now
+        \ git branch hyperlinklinenumbers d841097
+        \ d841097 is the latest commit!
+        \ src: https://stackoverflow.com/questions/2816715/branch-from-a-previous-commit-using-git
+  * run web.py
+    \ as root, else cannot listen on port 80
+    * while true; do PATH="$PATH:../playpen/" sudo ./web.py ; done
+      \ now just C-c to restart
+  * git remote
+    * gen key
+      \ ssh-keygen -t ed25519 -a 100
+    * upload pub key to github
+    * remote add
+      \ git remote add upstream git@github.com:githubusernamehere/repohere.git
+    * push up
+      \ git push -u upstream hyperlinklinenumbers
+
+
+* check manjaro iso sig
+  * get *.iso and *.sig
+  * get key
+    \ gpg --no-default-keyring --keyring vendors.gpg --keyserver pgp.mit.edu --recv-key 11C7F07E
+    \ that creates:
+    \ gpg: keybox '/home/myuser/.gnupg/vendors.gpg' created
+    \ gpg: /home/myuser/.gnupg/trustdb.gpg: trustdb created
+  * check key
+    \ gpg --verify --verbose --keyring vendors.gpg manjaro-xfce-16.06-pre1-x86_64.iso.sig
+    \ that will check the sig for the file manjaro-xfce-16.06-pre1-x86_64.iso
+    \ output:
+    \ gpg: assuming signed data in 'manjaro-xfce-16.06-pre1-x86_64.iso'
+    \ gpg: Signature made Sun Mar  6 11:57:51 2016 CET using RSA key ID 11C7F07E
+    \ gpg: using PGP trust model
+    \ gpg: Good signature from "Philip M�ller (Called Little) <philm@manjaro.org>" [unknown]
+    \ gpg: WARNING: This key is not certified with a trusted signature!
+    \ gpg:          There is no indication that the signature belongs to the owner.
+    \ Primary key fingerprint: E4CD FE50 A2DA 85D5 8C8A  8C70 CAA6 A596 11C7 F07E
+    \ gpg: binary signature, digest algorithm SHA256, key algorithm rsa2048
+
+* systemd nixos rules for boot.loader.grub.device
+  \ src: https://stackoverflow.com/questions/28339702/install-grub-on-a-disk-drive-by-uuid
+  \ also: https://github.com/NixOS/nixos/blob/master/modules/programs/virtualbox.nix
+  \ XXX: but do use /dev/disk/by-id/  for now! The above is just for future usage; eg. template for systemd auto-creation of wtws:)
+
+* use raw usb stick or harddrive (eg. partitioned) in virtualbox, as is:
+  \ VBoxManage internalcommands createrawvmdk -filename /tmp/guix.vmdk -rawdisk /tmp/guixsd-usb-install-0.10.0.x86_64-linux
+  \ src: https://agnipulse.com/2009/07/boot-your-usb-drive-in-virtualbox/
+  \ that doesn't seem to work anymore!
+  * another way:
+    \ This kinda works, but couldn't boot from it (maybe for other reasons!):
+    \ sudo losetup -f /home/user/sandbox/rust/writing_an_OS_in_Rust/blog_os/target/x86_64-blog_os/debug/bootimage-blog_os.bin
+    \ add -P if it has partitions?
+    \ losetup -a
+    \ ^ to see which dev it created, for me /dev/loop0
+    \ sudo chown user /dev/loop0
+    \ sudo VBoxManage createmedium disk --filename  /tmp/d.vmdk --format=VMDK --variant RawDisk --property RawDrive=/dev/loop0
+    \ sudo chown user /tmp/d.vmdk
+    \ now add it in VirtualBox as harddisk, not as ISO, nor floppy, nor USB harddisk! (the latter doesn't even have boot-from support in virtualbox 7.0.2)
+  * alternative way:
+    \ src: https://lists.gnu.org/archive/html/guix-devel/2015-02/msg00260.html
+    * convertfromraw gnu-usb-install-version-linux-i686 gnu.vdi --format vdi
+      \ untested!
+
+* in emacs
+  * how to insert a numeric X number of times via M-num or C-u, num  and then the numeric X char; works for non numeric X
+    \ M-88 C-u 0  (thanks to unkn2000)
+  * can't type C-g after having pressed Esc (aka meta), to cancel it; it only works because M-C-g is undefined.
+
+
+* guix:
+  * WARNING: use only 1 core in virtualbox or you'll get guest kernel hangs!(eg. with 2 or 4 cores tested to hang! which makes me question their kernel!!)
+* virtualbox boots faster 
+  \ actually(with KVM in 4.6_rc7 kernel), virtualboxed NixOS boots in 53sec(with X too) with 1 core, and in 38sec with 4 cores! and 39sec with 2 cores - note: there's an issue in nixos(unknown) and for some reason X or xfce4 hangs on a black screen for a while.
+  \ but without KVM it was slower with 1 and 4 cores than with 2 and 3. (can't remember the numbers!)
+  \ GuixSD boots in 21.65sec with 1 core! 18.44sec with 2 cores; 16.55 with 3 core; 16.36sec with 4 cores; and again 1 core in 18.68sec, and 2 cores in - note the time it takes for me to enter user/pwd is all those extra seconds difference...
+  \ ok GuixSD with auto cat-ing /proc/uptime after I enter user/pass fast:
+  \ 4 cores 14.36sec, 13.40sec
+  \
+
+* /proc/uptime
+  \ "This file contains two numbers: the uptime of the system (seconds), and the amount of time spent in idle process (seconds)."
+  \ src: https://www.linuxquestions.org/questions/linux-general-1/2-numbers-in-proc-uptime-217046/
+
+* avoid grsecurity kernels
+  \ why: https://www.reddit.com/r/programming/comments/4gn0dr/hector_martin_on_twitter_how_to_panic_a_current/d2j21xn
+
+* generate that sha256 from NixOS (nix) in gentoo (without getting nix)
+  - time sudo emerge -nav dev-python/zbase32
+    \ nevermind this
+  - git clone https://github.com/tv42/zbase32
+  - go shiet
+    * cd "$GOPATH"
+    * go get github.com/tv42/zbase32
+    * cd src/github.com/tv42/zbase32
+    * go build -v cmd/zbase32-decode/*.go
+    * go build -v cmd/zbase32-encode/*.go
+    * echo 13m0s2m0zg304w86yvcmxgbjl41c4kc420044avi8rnr1xwcscsq | ./decode
+      \ decode: decoding input: "13m0s2m0zg304w86yvcmxgbjl41c4kc420044avi8rnr1xwcscsq": illegal z-base-32 data at input byte 3
+  * nix-hash
+    \ src: https://github.com/NixOS/nix/blob/451ebf24ce532f8d59f929efd486104fcebf1aa6/src/libutil/hash.cc#L119
+    * base32 sha256 to normal hexa(aka base16) sha256:
+      \ nix-hash --type sha256 --to-base32 5833cd780fd96614b722040041d8242c102ad7eb956d6f102760bc0faad0a08e
+    * normal sha256 to base32 sha256:
+      \ nix-hash --type sha256 --to-base16 13m0s2m0zg304w86yvcmxgbjl41c4kc420044avi8rnr1xwcscsq
+
+* xfce4-terminal search(ctrl+shift+F) Previous is broken, it skips existing ones that Next doesn't skip!
+  \ eg. execute the above 2 nix-hash commands, then search Previous for 13m0s2m0zg304w86yvcmxgbjl41c4kc420044avi8rnr1xwcscsq
+
+* atelierPC (the celeron)
+  * booting from USB (nixos and manjaro tested)
+    \ isolinux.bin missing or corrupt
+  * CAN boot from CD though!
+  *
+
+* boot any iso from HDD if you already have a working GRUB and linux OS
+  \ src: http://www.howtogeek.com/196933/how-to-boot-linux-iso-images-directly-from-your-hard-drive/
+  \ src: https://www.system-rescue-cd.org/Sysresccd-manual-en_Easy_install_SystemRescueCd_on_harddisk#Boot_the_ISO_image_from_the_disk_using_Grub2
+  * put iso somewhere
+    \ eg. /home/z/a.iso
+  * sudo fdisk -l
+    \ see which partition has that file
+    \ /dev/sda3 or in grub speak hd(0,3) which works even if it's (the /boot but) under LUKS
+  * sudo vim /boot/grub/grub.cfg
+    \ for manjaro and others see src: https://gist.github.com/gorhill/6561765
+    \ add grub entry:
+    * for system rescue CD iso
+      \ menuentry "sysrescd ISO" {
+      \ set isofile="/home/z/a.iso"
+      \ loopback loop (hd0,3)$isofile #won't work with LUKS
+      \ #loopback loop /$isofile #works with LUKS but only half-way! iso's initram needs to be able to open luks device where iso is stored
+      \ linux (loop)/isolinux/rescue64 isoloop=$isofile setkmap=us dns=8.8.8.8 dostartx rootpass=/ nocache
+      \ initrd (loop)/isolinux/initram.igz
+      \ }
+      \
+      \ right, so setkmap=us to not get the prompt for keyboard
+      \ nocache to can easily change to docache if wanted via 'e' key at grub prompt! but my test shows docache has no effect in this case!
+      \ rootpass is the root password
+    * for Manjaro
+      \ for img_dev=/dev/sda3  can be /dev/disk/by-label/wtwlabelsda3hashere or /dev/mapper/luks_on_sda2_boot  where sda3 is the device which contains the .iso file
+      \ XXX: you take the line with misolabel=MJRO1606 from inside the .iso under /isolinux/isolinux.cfg
+      \
+      \ menuentry "manjaro ISO" {
+      \ set isofile="/manjaro-xfce-16.06-rc1-x86_64.iso"
+      \ loopback loop (hd0,3)$isofile #won't work with LUKS
+      \ #loopback loop /$isofile #works with LUKS but only half-way! iso's initram needs to be able to open luks device where iso is stored
+      \ linux (loop)/manjaro/boot/x86_64/manjaro setkmap=us img_dev=/dev/sda3 img_loop=$isofile misobasedir=manjaro misolabel=MJRO1606 nouveau.modeset=1 i915.modeset=1 radeon.modeset=1 logo.nologo overlay=free showopts timezone=Europe/Bucharest locale.LANG=en_US.utf8
+      \ initrd (loop)/manjaro/boot/x86_64/manjaro.img
+      \ }
+  * reboot
+    \ grub2-mkconfig obviously NOT needed to be run! it will overwrite grub.cfg!
+
+* ssh port forward
+  \ eg. ssh -p 8822 -L 55900:127.0.1.2:5900 127.0.0.20 -l user
+  \ first it ssh-es to remote's port 8822 (where remote is: 127.0.0.20) and connects are user 'user'
+  \ the port forward connects to remote's 127.0.1.2:5900 when you connect to 127.0.0.1:55900 on your local
+
+* are you getting RCU stalls?
+  \ INFO: rcu_sched self-detected stall on CPU
+  \ INFO: rcu_sched detected stalls on CPUs/tasks:
+  \
+  \ something about amd_e400_idle
+  \
+  \ fix:
+  \ ensure BIOS setting AMD C1E Support is Disabled or Auto (not Enabled!)
+  \ on the desktopPC!
+
+* sunxi_debug
+  \ https://github.com/allwinner-zh/linux-3.4-sunxi/blob/e5b270c05bf45557233f54ccb5a5e4de8f67123a/arch/arm/mach-sunxi/sunxi-debug.c
+
+* Lessons In Electric Circuits
+  \ free
+  \ https://www.ibiblio.org/kuphaldt/electricCircuits/
+
+* Recoll is a good alternative to Everything(which runs on Windows) or, if you will, Google Desktop
+  \ https://www.lesbonscomptes.com/recoll/features.html
+
+* looks like CONFIG_X86_PAT can be enabled in kernel config now (tested on kernel 4.6.0-rc7 in gentoo non-hardened, on Z575)
+  \ CONFIG_MTRR=y (was set already)
+  \ these are new:
+  \ CONFIG_MTRR_SANITIZER=y
+  \ CONFIG_MTRR_SANITIZER_ENABLE_DEFAULT=0
+  \ CONFIG_MTRR_SANITIZER_SPARE_REG_NR_DEFAULT=1
+  \ CONFIG_X86_PAT=y
+
+* audio/video chat program?
+  \ https://github.com/tux3/qtox
+
+* time blkdiscard -vz /dev/sda
+  \ time: real 417m11.934s  user 0m0.000s sys 1m3.093s
+  \ on WDC WD20EARS-00S8B1 (2TB)
+  \ NOTE: don't run this if you don't want to lose all your data! OBVIOUSLY!
+
+* notabug.org
+  * cannot fork a forked repo, it will fork the original repo!
+    \ even though it shows correctly that it will next fork the forked repo
+    \ https://twitter.com/ActULizeinM8ERL/status/738040858906394624
+
+* which process is writing to disk?
+  \ echo 1 > /proc/sys/vm/block_dump
+  \ dmesg -w
+  \
+  \ src: https://unix.stackexchange.com/questions/44103/how-to-find-which-process-is-regularly-writing-to-disk
+
+* mkfs.ext4 for usb stick
+  \ mkfs.ext4 -v -O ^has_journal -m 1 -- /dev/sdd1
+  \ aka no journal and 1% reserved for root
+  \ src: http://heraly.be/wiki/doku.php?id=raspberry:formatusb
+
+
+* powertop needs CONFIG_AUDIT apparently, but doesn't complain! or else cannot see % CPU states usage, and % other devices use.
+  \ but the bad part is that systemd will try to use it(AUDIT) and spam audit messages on due to chromium opening tabs
+
+
+
+* fix pulseaudio from listening on 0:0:0:0:4713
+  \ tcp        0      0 0.0.0.0:4713            0.0.0.0:*               LISTEN      923/pulseaudio
+  * comment out this line in file /etc/pulse/default.pa
+    \ load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1
+    \ src: https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Network/#index1h2
+    \ it was commented in gentoo!
+
+
+* in mc
+  * replace last type char with char 'l'
+    \ Alt+[, d, l
+    \ or repeat: Alt+[, d
+    \ that selects 1 char to the left, aka extends selection to the left, and your next keypress eg. 'l'  will replace the selection with it
+  * get keys stuck FIXME?
+    \ make sure you have F9,o,c,Alt+y (aka pause after run: always)
+    \ exec a command eg. ls
+    \ now you see: Press any key to continue...
+    \ press Up Arrow then Enter
+    \ now it's stuck a bit even if you keep pressing a key eg. s
+    \ or press Up Arrow then s key
+    \ it doesn't stuck all the time! which is odd!
+    \ in last case you have to press key s 19 times to return to UI
+    \ now it's 21 of s ...
+    \ seems that it's only 1 s then 2 s then 21 s, when u start a new xfce4-terminal then mc
+
+* nmap scan like this:
+  \ https://www.digitalocean.com/community/tutorials/how-to-test-your-firewall-configuration-with-nmap-and-tcpdump
+
+* chromium scroll via touchpad(and mouse wheel? apparently) can cause the webpage to go blank
+  \ issue: https://bugs.chromium.org/p/chromium/issues/detail?id=615714
+  \ chrome://flags
+  \ disable smooth scrolling
+
+* umount is still hanging...
+  \ and it's function umount2 (libc.so.6)
+  \ so this is why it's hanging for like 30sec upon shutdown, most likely
+  \ https://bugzilla.kernel.org/show_bug.cgi?id=151621
+  * manually free pagecache pages
+    \ src: https://unix.stackexchange.com/questions/87908/how-do-you-empty-the-buffers-and-cache-on-a-linux-system/87909#87909
+    \ time echo 1 | sudo tee /proc/sys/vm/drop_caches
+  * check number of pagecache pages
+    \ echo m|sudo tee /proc/sysrq-trigger >/dev/null ; dmesg|grep -F "pagecache pages"|tail -1
+
+
+* Synchronizing SCSI cache fails?
+  * vim /usr/lib/systemd/system-shutdown/debug.sh
+    \ #!/bin/bash
+    \ sync && sdparm --command=sync /dev/sda && sleep 1
+    \ mount -o remount,ro /
+    \ #this is the IMPORTANT part:
+    \ #turn off drive cache, workaround for https://bugzilla.kernel.org/show_bug.cgi?id=151631
+    \ hdparm -W0 /dev/sda
+    \
+    \ #flush drive cache:
+    \ hdparm -F /dev/sda
+    \ hdparm -f /dev/sda
+    \ sleep 1
+
+* ohci-pci "controller won't resume" "HC died; cleaning up"
+  \ https://bugzilla.kernel.org/show_bug.cgi?id=151641
+
+* chromium hangs or slows down during playing youtube videos because of audio issues
+  \ must use system-ffmpeg chromium //haven't figured out why or how to fix this!
+  \ oh... https://bugs.chromium.org/p/chromium/issues/detail?id=629695
+
+* if powermanager doesn't start
+  \ sudo pacman -S libxss
+
+* bug in clock plugin of xfce4-panel
+  \ UTC+7 is apparently UTC-7, in the timezone field
+
+* rust IDE?
+  \ https://intellij-rust.github.io/features/
+  \ git clone the two repos: https://github.com/intellij-rust/intellij-rust and https://github.com/intellij-rust/intellij-toml and follow instruction to build them with gradle(note: it fetches a bunch of intellij stuff twice for each project!)
+  \ use install from disk and point to the zip files in ./build/distributions/ for each project(project=intellij-rust and intellij-toml)
+
+* buildroot
+  * the manual (doc)
+    * required on host:
+      \ sudo pacman -S --needed w3m dblatex
+      \ NOTE: dblatex takes a while to install!! 5min?
+    * build
+      \ html manual(needs dblatex):
+      \ time make manual
+      \ or text only (without dblatex needed):
+      \ time make manual-text
+    * open:
+      \ text: less output/docs/manual/manual.text
+      \ html: less /output/docs/manual/manual.html
+  * build
+    * time make menuconfig
+    * time make
+      \ fail: configure: error: in `/home/z/build/1nonpkgs/buildroot/buildroot/output/build/gettext-0.19.8.1/gettext-runtime/libasprintf':
+      \ configure: error: C++ preprocessor "/lib/cpp" fails sanity check
+      \ See `config.log' for more details
+      \ configure: error: ./configure failed for libasprintf
+      \ make: *** [package/pkg-generic.mk:194: /home/z/build/1nonpkgs/buildroot/buildroot/output/build/gettext-0.19.8.1/.stamp_configured] Error 1
+
+* vlc always starts up maximized?
+  \ workaround: rm ~/.config/vlc/vlc-qt-interface.conf
+
+* vlc cuts the ending from a/v (like 0.5sec)
+  \ use mplayer(or youtube) to see the real ending
+
+* Rust
+  * all the clippy lints
+    \ https://manishearth.github.io/rust-clippy/master/
+  * intellij rust plugin
+    \ doc/keyboard shortcuts: https://intellij-rust.github.io/features/
+
+* youtube videos don't resume where they were left, after browser restart or reload of page
+  \ make sure uBlock(not just uMatrix) allows requests to s.youtube.com
+
+* firefox-hg compiles fine but coredumps on startup in libxul.so ?
+  \ oops my bad, it's not this://recompile without --disable-wmf !!
+  \ to fix, don't use: ac_add_options --enable-optimize=-O2
+  \ dang it, and I remember not using that at some point and it still crashed! but it seems i remember wrongly!
+
+* the dumbest issue with symlinked dirs, ever!
+  \ Linux myzee 4.8.0-rc1-g29b4817 #20 SMP PREEMPT Mon Aug 8 21:18:27 EEST 2016 x86_64 GNU/Linux
+  \ lrwxrwxrwx 1 z    z               24 06.07.2016 05:02 CEmanNSjarORredED -> build/1nonpkgs/CEmanNSjarORredED/
+  * while inside a symlink-dir, you cannot access a relative path file (but bash completion works just fine!)
+    \ cd ~/CEmanNSjarORredED
+    \ ls -la ../build/1packages/firefox-hg/mozconfig
+    \ ls: cannot access '../build/1packages/firefox-hg/mozconfig': No such file or directory
+    \ cd ..
+    \ ls -la ./build/1packages/firefox-hg/mozconfig
+    \ -rw-r--r-- 1 z z 22516 09.08.2016 12:59 ./build/1packages/firefox-hg/mozconfig
+    \ l
+    \ lrwxrwxrwx 1 z    z               24 06.07.2016 05:02 CEmanNSjarORredED -> build/1nonpkgs/CEmanNSjarORredED/
+    \ are you friggin' kidding me with this?!
+    \ and of course this works:
+    \ /home/z/CEmanNSjarORredED $ l ../../../build/1packages/firefox-hg/mozconfig
+    \ -rw-r--r-- 1 z z 22615 09.08.2016 13:09 ../../../build/1packages/firefox-hg/mozconfig
+    \ it's like I'm in the dir that the symlink points to, even though it doesn't look like that!
+    \ l and ls are aliases, so here's to be sure:
+    \ /home/z/CEmanNSjarORredED $ /usr/bin/ls -la ../../../build/1packages/firefox-hg/mozconfig
+    \ -rw-r--r-- 1 z z 22615 Aug  9 13:09 ../../../build/1packages/firefox-hg/mozconfig
+
+
+* cpupower
+  * won't set governor if version is 4.7-1 instead of 4.6-4
+    \ https://bugzilla.kernel.org/show_bug.cgi?id=135391
+    \ [2016-08-11 00:02] [ALPM] upgraded cpupower (4.6-4 -> 4.7-1)
+    \ so, in 4.6-4
+    \ "Setting cpu:" is shown
+    \ even though you still get this message: modprobe: FATAL: Module msr not found in directory /lib/modules/4.8.0-rc1-g9512c47
+
+* systemd-journald: Missed kernel messages
+  \ src: https://bbs.archlinux.org/viewtopic.php?id=172639
+  \ add --dmesg to the journalctl command (see ~/bin/logf)
+  \ XXX: ok this is bad because it now doesn't show coredumps like it does when --dmesg is not specified!
+
+* after exit mc, copy paste adds 0~ and appends 1~ to whatever was pasted!
+  \ aka mouse LMB+RMB (from touchpad) from pasting 0~ and 1~ as paste edges! (in terminal)
+  \ a 'reset' command fixed it though, and usually happens after entering mc(even if exited)
+  \ bug: https://bugs.launchpad.net/ubuntu/+source/vte/+bug/1350334
+
+* firefox context menu has too many items and none are working
+  \ https://bugzilla.mozilla.org/show_bug.cgi?id=1238143
+  \ //try: --with-system-icu
+  \ //dno if this works yet!
+  \ https://bugs.gentoo.org/show_bug.cgi?id=571240#c11
+  \ you must use: ac_add_options --with-intl-api
+  \ not tested yet! (but it was without so far!)
+
+* btrfs snapshots
+  * create new
+    \ btrfs subvolume snapshot -r / /backup
+  * delete old
+    \ btrfs subvolume delete /backup4
+
+* sugar
+  \ http://arstechnica.com/science/2016/09/sugar-industry-bought-off-scientists-skewed-dietary-guidelines-for-decades/
+
+* a running adb process causes this spam:
+  \ kernel: ohci-pci 0000:00:12.0: ohci_rh_resume: control 643
+  \ due to a patched kernel where I added that.
+  \ Even though adb listens on 127.0.0.1 apparently.
+  \ adb got started by cmd: idea(.sh)
+
+* remove all lib32 packages:
+  * sudo pacman -Rs `pacman -Qsq lib32|grep -v mhwd` manjaro-alsa dev86
+
+* never use: distcc
+  \ i tried it once with pacman/makepkg but never really worked! it would just run stuff on only one PC + the config variants that I've tried are plenty - don't want to go through that again!
+
+
+* virtualbox boot from manjaro iso freezes on loading boot image bitmap?
+  \ ensure virtualbox's Controller: IDE is set to Use Host I/O Cache (otherwise it does hang) - it is set by default; still true on 5.1.18 r114002(untested the HDD one below)
+  \ NOTE: this might be a temporary issue, because now it hangs on ahci aka the hdd on bootup, and this one does not have Use Host I/O Cache set by default and it didn't need it before!
+  \ persists after (host OS) restart
+  \ works if selecting Use host I/O Cache for the HDD also! weird because this wasn't needed before! I dno what could've changed that would make this necessary now! (didn't update kernel or OS since then)
+  \ nope, it locks-up sometimes during the black screen startx//can unset them both after you're done needing to boot from CD/DVD!
+
+* some Panasonic headphones RP-HV104 (RP-HV104E-K) [Made in China] are unbalanced: left ear is less powerful than the right so the entire center seems shifted; also the audio seems either distorted or I can hear the low quality mp3-like encoding, mostly in left ear.
+
+* Akyga charger AK-BC-01 makes a clock-like tick every 5 seconds during charging(4xAAA 1000mA accumulators, but not when charging 2xAA 1800mA(forgot?) accus); it's relatively high-frequency but it sounds like a digital version of a mechanical clock-tick.
+
+* no USB devices in Virtualbox? due to:
+  \ VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the 'vboxusers' group.
+  \ from: /tmp/VBoxSVC.log
+  \ did not try to fix this yet!
+
+* WARNING: CPUAffinity in /etc/systemd/system.conf is system global! So if you set 1 2 3, you get to never use cpu0! So be sure that 0 1 2 3 is set! or you'll always have cpu0 unused (reported by top and taskmanager). "Configures the initial CPU affinity for the init process." (maybe this implies it, for example all children of init inherit its affinity and since everything is a child of init, you're stuck with that affinity for every process!)
+  \ issue was active since: Sun Oct 30 02:28:21 2016 +0100
+  \ (actually I remember knowing this would be system-wise when I set it! just forgot about knowing it and now I act surprised heh)
+  \ fixed on 12.Dec.2016 0630am
+
+* if firefox hangs while uMatrix window is opened, this makes the mouse in xfce useless, but alt+tab still works. It's like the system is locked up(mouse cursor can move but won't change state/icon and clicks have no effect, even hovering on the taskbar doesn't bring it back from its hidden-state). So alt+tab and then pkill firefox brings everything back to normal! If Firefox hangs while uMatrix window is not opened, then no problem with the mouse, except inside the firefox window(which being hung, mouse has no effect inside it)
+  \ this seems to be a window manager or X issue, by treating the uMatrix window(and if I remember right, the noscript window too - the one opened via click/rightclick) the same as the xfce panel window and until those windows are gone or responsive, nothing else can be affected by mouse clicks (as if system is hung).
+
+
+* on my Z575, you can never "not frozen" the disk that's placed inside the laptop, on main; you can the one placed in cd-rom bay, though!(but only if you put linux to sleep)
+
+* symlinks oddity: (MY BAD: .vim is already a symlink dir, so symlinks within it must be relative to its realpath!!!)
+  \ current dir: ~/.vim/bundle
+  \ kernel: Linux z5 4.10.0-rc7-gd5adbfcd5f7b #128 SMP PREEMPT Mon Feb 6 05:01:32 CET 2017 x86_64 GNU/Linux
+  * this previously worked(now it's red):
+    \ lrwxrwxrwx 1 z z  38 06.02.2017 16:02 wtf -> ../../build/1nonpkgs/rust.vim/rust.vim
+  * now only this works:
+    \ lrwxrwxrwx 1 z z  50 06.02.2017 16:02 rust.vim -> ../../../../../../build/1nonpkgs/rust.vim/rust.vim/
+  * See also: "the dumbest issue with symlinked dirs, ever!" in old/knowhow.wofl
+    \ this is still true though. It seems that cd .. is the exception to the rule! that's why it just works, instead of cd-ing you to the symlink-target's .. dir.
+
+
+* download prebuild nightly chromium
+  - manual way, asan(slow!) chromium:
+    \ https://commondatastorage.googleapis.com/chromium-browser-asan/index.html?prefix=linux-release/
+    \ long list! needs time to populate page!
+  * this seems to be the best way to do so(using those scripts, that is):
+    \ https://github.com/scheib/chromium-latest-linux
+* see an X window info: xwininfo -tree
+  \ lets you inspect the window hierarchy of a window and get the layout of child windows.
+  \ src: linux_plugins.md (in docs folder of chromium checkout)
+
+* debug chromium renderer process:
+  \ this gets you the sourcecode too(type 'list' in gdb to see it) - unsure how to get it to show the actual line in 'bt full' tho!
+  \ chro --user-data-dir=/tmp --no-sandbox --disable-hang-monitor --allow-sandbox-debugging --renderer-cmd-prefix="xterm -maximized -title renderer -e gdb -directory=/home/z/build/1packages/chromium-dev-git/fetch_gclient_base/checkout_root/src/out/Default/ -directory=/home/z/build/1packages/chromium-dev-git/fetch_gclient_base/checkout_root/src/ -x /home/z/build/1packages/chromium-dev-git/gdb_cmds --args"
+  \ //old(no src code avail. with 'list'): chro --user-data-dir=/tmp --no-sandbox --disable-hang-monitor --allow-sandbox-debugging --renderer-cmd-prefix="xterm -maximized -title renderer -e gdb -x /home/z/build/1packages/chromium-dev-git/gdb_cmds --args"
+  \ where /home/z/build/1packages/chromium-dev-git/gdb_cmds contains 3 lines:
+  \ set pagination off
+  \ show pagination
+  \ run
+  \ It is important to turn off pagination else it will pause waiting for enter or q (or was it space or q?)
+  \ src: https://chromium.googlesource.com/chromium/src/+/master/docs/linux_debugging.md#Multiprocess-Tricks
+  \ note you need args.gn symbol_level = 1 (at least 1, if not 2) in order to see the stacktrace, for example if hunting for this github tab crash stackdumping bug: https://bugs.chromium.org/p/chromium/issues/detail?id=694090
+  \ actually check that file for updates: /home/z/build/1packages/chromium-dev-git/gdb_cmds
+
+* dump stacktrace from chromium code:
+  \ #include "base/debug/stack_trace.h"
+  \ base::debug::StackTrace().Print();
+
+* timestamp to date?
+  \ date -d @1487643733
+
+* SSD memory cell clearing
+  \ src: from archwiki Solid State Drives/Memory cell clearing
+  \ assumed /dev/sda is the SSD!
+  * desktop PC (asus mobo) can erase ssd from bios, but it will do a hardware poweroff(of whole PC) first, else it would be security frozen.
+  * boot into a stock manjaro kernel (not the manual git one) - because they have ability to put computer to sleep
+  * sudo hdparm -I /dev/sda
+    \ see it says 'frozen' as opposed to 'not frozen'
+    \ and above 2 lines: not	enabled
+  * put laptop to sleep once, then wake up.
+  * sudo hdparm -I /dev/sda
+    \ see that it says 'not frozen' as opposed to 'frozen'
+    * if still frozen (currently happens whether SSD is on main OR cdrom bays!)
+      \ connect it to ESATA after having booted the OS ! 
+      \ if you had it connected since laptop started up, then it's not enough to just run scripts esata_eject and esata_detect, you also have to physically unplug the device after esata_eject (i only tried unplugging both esata and usb power plugs, no other combinations), otherwise it will still show 'frozen'
+  * set a hdd password
+    \ sudo hdparm --user-master u --security-set-pass a /dev/sda
+    \ that sets password: a
+  * sudo hdparm -I /dev/sda
+    \ shows 'enabled' as opposed to 'not enabled'
+  * erase SSD - all data is lost OBVIOUSLY!
+    \ time sudo hdparm --user-master u --security-erase-enhanced a /dev/sda
+    \ using password: a
+    \ this takes 15.6 seconds
+    \ takes real	2m42.051s on kingston KINGSTON SA400S37240G Firmware Revision:  SBFK71B1
+    \ took real	2m50.244s on KINGSTON SA400S37240G  Firmware Revision:  SBFK71F1
+  * sudo hdparm -I /dev/sda
+    \ shows 'not enabled' and 'not frozen'
+  * lsblk
+    \ shows leftover in-kernel(?)-cached partitions as they were before erasure.
+  * reread partition
+    \ sudo blockdev --rereadpt /dev/sda
+    \ or
+    \ sudo hdparm -z /dev/sda
+    \ -z = Force a kernel re-read of the partition table of  the  specified device(s).
+  * lsblk
+    \ shows no partitions
+  * sync
+    \ my kind of sync from ~/bin which does a drive-cache flush
+    \ not really needed, obviously
+
+* not using yadm due to the possibility of accidentally running git clean -ndfX in the wrong dir (without the -n aka dry run)
+  \ I've added that git clean command to the cclean script for any package
+
+* no icons in xfce? must install xfce4-settings package!
+  \ otherwise not even the mouse cursor settings have any effect
+  \ confirmed that only the xfce4-settings package is the culprit - if removed, the icons are gone again!
+
+* youtube videos garbled?
+  \ make sure it's not this ABI change (increment) in libvpx commit bcd0c49af38037db29fdaa6ab30e3ed64d3b4
+
+* compact Virtualbox HDD
+  \ "Please note that compacting is currently only available for VDI images. A similar effect can be achieved by zeroing out free blocks and then cloning the disk to any other dynamically allocated format. You can use this workaround until compacting is also supported for disk formats other than VDI."
+  \ src: https://www.virtualbox.org/manual/ch08.html#vboxmanage-modifyvdi
+  * zero out freespace first
+    * use zerofree
+      \ (yaourt can see it in archlinux), on ubuntu 10.4 LTS: sudo apt-get install zerofree (ok this won't work, 404) so, instead:
+      * wget old-releases.ubuntu.com/ubuntu/pool/universe/z/zerofree/zerofree_1.0.1-2_i386.deb
+      * dpkg -i ./zerofree_1.0.1-2_i386.deb
+        \ as root
+      * must mount as readonly
+        - log out of X
+          \ ok, can't really log out, it will still be in X
+          * just open a terminal in X
+        - switch to singleuser
+          \ sudo telinit 1
+          \ ok this is bad, it keeps the ubuntu bootup logo on screen and can't do anything. - ok remove 'quiet splash' from /etc/default/grub and sudo update-grub first, then reboot. and still got that logo! gr9
+          \ ok, hold shift while booting and append 'single' to cmdline. A menu appears, choose root - drop to root shell prompt. (in 1.4 LTS ubuntu)
+        * reboot, hold shift to see grub menu, move on recovery-mode (which adds 'single' to cmdline), press key 'e' and add: init=/bin/bash  after 'ro single'
+          \ Ctrl+X to boot
+          \ src: https://stackoverflow.com/questions/7989022/one-time-boot-into-read-only
+        * mount / -o remount,ro
+          \ //can't: "mount: / is busy"
+          \ //ok fine, reboot and choose the 2nd grub entry with recovery-mode; same thing happens!
+          \ //alright this works: init=/bin/bash
+      * time zerofree -v /dev/sda1
+        \ 2m35s
+        \ careful, using -n (aka dry run), cannot stop it with C-c and there's no other terminal to switch to; C-z doesn't work either to suspend to background.
+      * poweroff
+  * then on host, while vm isn't running(eg. stop it first, shutdown/poweroff),
+    \ maybe copy it to /tmp (tmpfs) first, due to the amount of writes that would happen.
+    * vmdk to vdi conversion (needed only once)
+      \ time VBoxManage clonehd --format VDI ubuntu\ 32\ bit\ 10.4\ desktop-disk1.vmdk ubuntu\ 32\ bit\ 10.4\ desktop-disk1.vdi
+      \ 1m17s
+      \ src: https://nfolamp.wordpress.com/2010/06/10/converting-vmdk-files-to-vdi-using-vboxmanage/
+    * run:
+      \ VBoxManage modifymedium hddfilename.vdi --compact
+      \ or in my case:
+      \ time VBoxManage modifymedium ubuntu\ 32\ bit\ 10.4\ desktop-disk1.vdi --compact
+      \ 5sec because clone did the compacting basically; which was about 650mb less!
+
+* adb upload apk to device
+  \ adb install file.apk
+
+* no gpu in chromium?
+  \ chromium --disable-gpu
+  \ or run as:
+  \ LIBGL_ALWAYS_SOFTWARE=1 chromium
+  \ src: https://bbs.archlinux.org/viewtopic.php?pid=1676256#p1676256
+  \ chrome://gpu reports the same (apparently)
+
+* NTFS read/write via ntfs-3g (arch/manjaro pacman package)
+  \ NOT via kernel support!
+
+* rustup
+  * docs
+    * run first: rustup component add rust-docs
+    * rustup doc
+      \ to open docs in the browser
+      \ see todo.wofl for fixes
+  * sources
+    * rustup component add rust-src
+      \ for the sources
+      \ located in: `rustc --print sysroot`/lib/rustlib/src
+      \ eg. ${HOME}/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src
+  * see rustup.wofl for updated info
+
+* sysrq+o aka poweroff executes kernel_power_off() from kernel/reboot.c
+  \ this calls device_shutdown() from drivers/base/core.c
+  \ ^ unsure if this also hits the HDDs (probably not?)
+  \
+
+* livestreamer got replaced by the up-to-date streamlink
+  \ community/streamlink
+  \ aur/streamlink-git
+  \ and in my packages!
+
+* how to check LAN/ethernet link speed
+  \ sudo lshw -c network
+  \ sudo lspci -s 01:00.0 -v
+  \ ^ that's my LAN device on Z575
+  \ sudo mii-tool -v enp1s0
+  * to set, via mii-tool
+
+* mark of the web - chromium
+  \ origin url and referrer saved for each downloaded file (unless saved on tmpfs)
+  \ tested on btrfs
+  \ content/common/quarantine/quarantine_linux.cc
+  \ kSourceURLExtendedAttrName
+  \ xdg.origin.url
+  \
+  \ $ attr -g xdg.origin.url filedownloadedviachromiumhere.ext
+  \ $ attr -g xdg.referrer.url filedownloadedviachromiumhere.ext
+  \ example:
+  \ $ attr -g xdg.referrer.url ${HOME}/PICS/banks/139854093.jpg
+  \ Attribute "xdg.referrer.url" had a 58 byte value for ${HOME}/PICS/banks/139854093.jpg:
+  \ https://cbskymx2.files.wordpress.com/2012/10/139854093.jpg
+
+* rsync -X should be used when -a is used, for xattrs to also be saved
+  \ https://github.com/iputils/iputils/issues/32#issuecomment-312459858
+  \ rsync -X -a -H /mnt/ /new
+  \ #-X needed for ping(iputils archlinux package) and other inetutils(package) executables which use setcap in their pkg's .INSTALL file! or else ping won't work from normal user!
+  \ #ping has setcap cap_net_raw=ep usr/bin/ping
+  \ #^ that means CAP_NET_RAW see man 7 capabilities
+  \ #getcap `which ping`
+  \ #/usr/bin/ping = cap_net_raw+ep
+  \ #other things to note:
+  \ #$ attr -l `which ping`
+  \ #Attribute "capability" has a 20 byte value for /usr/bin/ping
+  \ #$ sudo attr -g capability `which ping`
+  \ #attr_get: No data available
+  \ #Could not get "capability" for /usr/bin/ping
+  \ #$ sudo attr -g security.capability `which ping`
+  \ #attr_get: No data available
+  \ #Could not get "security.capability" for /usr/bin/ping
+  \ #so, the only way to do it is via getcap!
+
+* white text on white background?
+  \ https://www.w3.org/Style/Examples/007/text-shadow.en.html
+  \ Readable white text
+  \ Drawing letters as outlines
+
+* 'test' is flawed
+  \ test -n  will not yield the same exit code as test -n ''
+  \ so, test -n and test -z are both exit code 0
+  \ then test -n "$@" => test -n => exit code 0, when "$@" is empty array
+  \ true for /usr/bin/test, bash test builtin and zsh test builtin
+  * workaround:
+    * in bash:
+      \ replace if test -n "$@"; then
+      \ with
+      \ if [[ -n "$@" ]]; then
+      \ the former is flawed, the latter actually works! when $@ is empty
+      \ similarly for -z
+
+* unlock password protected SATA HDD
+  \ note: T400 does not allow non alpha numeric chars, when entering HDD password from BIOS/POST
+  * boot from USB (arch linux)
+  * plug in SATA disk
+  * hdparm --user-master m --security-unlock PASS /dev/sdb
+    \ src: https://serverfault.com/questions/712849/how-to-unlock-a-ssd-disk-with-hdparm/733784#733784
+  * remove lock
+    \ hdparm --user-master m --security-disable PASS /dev/sdb
+
+* DuckDuckGo with my settings, for chromium/firefox:
+  \ https://duckduckgo.com/?kae=b&kp=-2&kad=en_US&k1=-1&kk=-1&kaj=m&kam=osm&kak=-1&kax=-1&kap=-1&kaq=-1&kf=1&kac=-1&k5=2&kah=hu-hu%2Cwt-wt&kl=wt-wt&k18=1&kao=-1&q=%s
+
+* searx.me with my settings, for chromium/firefox:
+  \ https://searx.me/?preferences=LONGBASE64STRINGHERE&q=%s
+  \ get LONGBASE64STRINGHERE from /home/user/build/1packages/4used/firefox-hg/searx.xml
+
+* tracking
+  * cat /etc/machine-id
+  * hostid
+    \ this uses `man gethostid` to get it! src: ${HOME}/build/1packages/coreutils/makepkg_pacman/coreutils/src/coreutils-8.29/src/hostid.c
+    \ it's a scrambled hex of 127.0.1.1 because that's the IP that my hostname resolves to!
+    \ "This normally resembles  the  Internet address for the local machine, as returned by gethostbyname(3), and thus usually never needs to be set."
+    - intentionall!//actually it seems bugged because 127.0.1.1 is 2130706689 not 8323329 aka 007f0101(which hostid currently returns!)
+      \ well they intentionally mess it up: return (int32_t) (in.s_addr << 16 | in.s_addr >> 16);
+      \ src: ${HOME}/build/1packages/glibc/makepkg_pacman/glibc/src/glibc-2.27.orig/sysdeps/unix/sysv/linux/gethostid.c
+    * /etc/hostid
+      \ if exists! see `strace hostid`
+      \ "In  the  glibc  implementation,  the  hostid  is  stored  in  the  file /etc/hostid"
+
+* ext4 formatting
+  \ sudo mkfs.ext4 -E lazy_itable_init=0,lazy_journal_init=0 -v /dev/sdd3; sync
+  \ otherwise kernel will lazily init itable&journal after mkfs.ext4 finishes and it takes several minutes! (on sdcard anyway)
+
+* mount a disk image file containing partitions
+  \ see also (if wanna use partprobe): https://superuser.com/questions/344899/how-can-i-mount-a-disk-image/345476
+  \ use `partx` to tell kernel about partitions (creates loop devices, see lsblk)
+  \ info here: https://gist.github.com/CExftNSroxORgpxED/58b45607b9ba7790345e8ad65f395389
+    \ it's on webarchive, prefix with: https://web.archive.org/web/20191018201102/
+    \ reproduced here:
+			\ Mounting a hard disk image including partitions in linux without using offset! (instead, using partx)
+			\ # as per https://superuser.com/questions/211338/how-to-mount-a-multi-partition-disk-image-in-linux
+			\ 
+			\ $ fdisk -l XigmaNAS-x64-LiveUSB-MBR-11.2.0.4.6229.img 
+			\ Disk XigmaNAS-x64-LiveUSB-MBR-11.2.0.4.6229.img: 800 MiB, 838860800 bytes, 1638400 sectors
+			\ Units: sectors of 1 * 512 = 512 bytes
+			\ Sector size (logical/physical): 512 bytes / 512 bytes
+			\ I/O size (minimum/optimal): 512 bytes / 512 bytes
+			\ Disklabel type: dos
+			\ Disk identifier: 0x90909090
+			\ 
+			\ Device                                      Boot Start     End Sectors  Size Id Type
+			\ XigmaNAS-x64-LiveUSB-MBR-11.2.0.4.6229.img1 *       63 1581118 1581056  772M a5 Free
+			\ 
+			\ $ sudo partx -a -v XigmaNAS-x64-LiveUSB-MBR-11.2.0.4.6229.img 
+			\ [sudo] password for CExftNSroxORgpxED: 
+			\ partition: none, disk: XigmaNAS-x64-LiveUSB-MBR-11.2.0.4.6229.img, lower: 0, upper: 0
+			\ Trying to use '/dev/loop0' for the loop device
+			\ /dev/loop0: partition table type 'dos' detected
+			\ range recount: max partno=5, lower=0, upper=0
+			\ /dev/loop0: partition #1 added
+			\ partx: /dev/loop0: adding partition #5 failed: Device or resource busy
+			\ partx: /dev/loop0: error adding partition 5
+			\ 
+			\ $ lsblk
+			\ NAME      MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+			\ loop0       7:0    0   800M  0 loop 
+			\ └─loop0p1 259:0    0   772M  0 part 
+			\ 
+			\ cfdisk says:
+			\ Partition type: FreeBSD (a5)
+			\ Attributes: 80  
+			\ 
+			\ i don't think I've support for that in my Linux kernel, so... 
+			\ $ mkdir 1; sudo mount /dev/loop0p1 1
+			\ mkdir: cannot create directory ‘1’: File exists
+			\ mount: /tmp/3/1: wrong fs type, bad option, bad superblock on /dev/loop0p1, missing codepage or helper program, or other error.
+			\ 
+			\ $ sudo partx -d -v /dev/loop0
+			\ [sudo] password for CExftNSroxORgpxED: 
+			\ partition: none, disk: /dev/loop0, lower: 0, upper: 0
+			\ /dev/loop0: partition #1 removed
+			\ 
+			\ $ lsblk
+			\ NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+			\ loop0    7:0    0   800M  0 loop 
+			\ 
+			\ $ sudo losetup -d /dev/loop0
+			\ 
+			\ $ lsblk
+			\ NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+
+
+* show each source code line in gdb with one command (as opposed to executing 'frame x' x=0..allframes for each frame)
+  * (gdb) frame apply all -q frame
+    \ thanks for this ^ to palves on #gdb freenode irc!
+  * (gdb) frame apply all list *$pc
+    \ thanks for this ^ to PhilippeW on #gdb freenode irc!
+
+* paste MMB clipboard in vim by using the gvim package(still 'vim' command!) and "*p
+  \ thanks to lopid and romainl on #vim freenode irc!
+  \ why gvim package instead of vim package: https://github.com/w0rp/ale/issues/2438#issuecomment-483205693
+
+* there's an embeded dir path in executables/libraries 's debuginfo that tells gdb where to find the relative-path filenames
+  \ DW_AT_comp_dir which is auto-added by gcc at compilation if -g flag is used! just -g , maybe other combinations too like -ggdb
+  * readelf -wi /usr/lib/libgobject-2.0.so.0|grep DW_AT_comp
+    \ shows <7b1b1>   DW_AT_comp_dir    : (indirect string, offset: 0x127): /home/user/build/1packages/4used/glib2/makepkg_pacman/glib2/src/build
+    \ $ readelf -wi /usr/lib/chromium-dev/chromium-dev|grep -i DW_AT_comp
+    \ <24>   DW_AT_comp_dir    : (indirect string, offset: 0xc08e8df): /home/user/build/1packages/4used/glibc/makepkg_pacman/glibc/src/glibc/csu
+    \ ...
+    \ <f7>   DW_AT_comp_dir    : .
+  * see filenames too?
+    \ $ readelf -wi /usr/lib/chromium-dev/chromium-dev|grep -E 'DW_AT_(comp|name)'
+    \     <3409>   DW_AT_comp_dir    : .
+    \ <343b>   DW_AT_name        : sike_fpadd
+    \ <345a>   DW_AT_name        : sike_cswap_asm
+    \ <347d>   DW_AT_name        : sike_fpsub
+    \ <349c>   DW_AT_name        : sike_mpadd_asm
+    \ <34bf>   DW_AT_name        : sike_mpsubx2_asm
+    \ <34e4>   DW_AT_name        : sike_mpdblsubx2_asm
+    \ <350c>   DW_AT_name        : sike_mpmul
+    \ <352b>   DW_AT_name        : sike_fprdc
+    \ <356a>   DW_AT_name        : ../../third_party/boringssl/src/crypto/hrss/asm/poly_rq_mul.S
+    \ <35a8>   DW_AT_comp_dir    : .
+    \ <35da>   DW_AT_name        : mask_low9words
+    \ <35fd>   DW_AT_name        : const3
+    \ <3618>   DW_AT_name        : const9
+    \ <3633>   DW_AT_name        : const0
+    \ <364e>   DW_AT_name        : const729
+    \ <366b>   DW_AT_name        : const3_inv
+    \ <368a>   DW_AT_name        : const5_inv
+    \ <36a9>   DW_AT_name        : shuf48_16
+    \ <36c7>   DW_AT_name        : shufmin1_mask3
+    \ <36ea>   DW_AT_name        : mask32_to_16
+    \ <370b>   DW_AT_name        : mask5_3_5_3
+    \ <372b>   DW_AT_name        : mask3_5_3_5
+    \ <374b>   DW_AT_name        : mask3_5_4_3_1
+    \ <376d>   DW_AT_name        : mask_keephigh
+    \ <378f>   DW_AT_name        : mask_mod8192
+    \ <37b0>   DW_AT_name        : poly_Rq_mul
+  * if some source files cannot be found, the path can be temp-set inside gdb
+    \ help dir
+    \ show dir
+    \ Source directories searched: $cdir:$cwd
+    \ $cdir is DW_AT_comp_dir value, basically
+
+* run processes inside a cgroup via systemd-run and have their memory.max limited
+  \ thanks to dreisner on #archlinux
+  * $ systemd-run --uid=1000 --shell
+    * find pid of this like:
+      * cd /sys/fs/cgroup/system.slice/run-u*.service
+        * set memory max limit
+          \ echo '27500M' | sudo tee memory.max
+
+* sha256sum benchmark/speed
+  \ time openssl speed sha1
+  \ time openssl speed sha256
+  \ time openssl speed sha512
+
+* git blame prior commit ? just add the current seen commit with a ^ suffix:
+  \ $ git blame gtk/gtkbutton.c
+  \ find the line you're interested in and see it's commit is c295ab0943e
+  \ $ git blame c295ab0943e^  gtk/gtkbutton.c
+  \ this will show prior commit blame
+  \ https://stackoverflow.com/a/5098314/11509478
+
+* see gtk3 stuff for a gtk app (eg. 'thunar') by pressing Ctrl+Shift+D (or I)
+  \ see how https://blog.gtk.org/2017/04/05/the-gtk-inspector/
+  \ ie. run this first: $ gsettings set org.gtk.Settings.Debug enable-inspector-keybinding true
+  \ made use of it here https://gitlab.gnome.org/GNOME/gtk/issues/2041#note_563829
+
+* windows 7 iso to usb flash(ie. bootable)
+  \ https://gist.github.com/kuznero/9eb62f6f0612a32d9c4446a4f1f4cf74
+  \ didn't work ^
+  \ or
+  \ install AUR packages ms-sys (or ms-sys-devel) AND windows2usb-git
+  \ ^ worked!
+
+
+* good info on how to sign a release .apk for android
+  \ https://github.com/mullvad/mullvadvpn-app/blob/master/README.md
+
+* gab.ai / gab.com
+  \ their "search" feature is crap
+
+* freenas
+  \ www.freenas.org
+  \ needs 8G RAM minimum
+
+* no idea what this is about at the moment (taken from /etc/hosts)
+  \ use --disable-databases chromium switch to workaround this bug: see: https://github.com/brave/browser-laptop/pull/15340
+
+* WARNING #FIXME: firefox can't find hosts that are after a line that's longer than 990 bytes(not chars or graphemes), since it's not using glibc's lookup functions but its own, in nsprpub/pr/src/misc/prnetdb.c !
+
+* #OCSP accesses for firefox are done via http port 80(NOT https port 443) so firewall must allow tcp out port 80 for these IPs, if about:config security.OCSP.require is true in firefox!
+  \ hosts accessed, examples: ocsp.digicert.com status.geotrust.com ocsp.usertrust.com crl4.digicert.com ocsp.int-x3.letsencrypt.org ocsp.comodoca.com status.rapidssl.com status.rapidssl.com ocsp.pki.goog ocsp.sca1b.amazontrust.com 
+
+* new tab page in chromium fetches favicons from t0.gstatic.com
+  \ #lookslike large favicons are fetched from here during new tab page (NTP) of chrome/chromium, see components/favicon/core/large_icon_service.cc +43 (the entire? url is passed)
+
+* you get this while `gclient sync`: UserWarning: Unable to load AWS_CREDENTIAL_FILE ()
+  \ allow www.googleapis.com to DNS resolve and connect to
+
+* computrace
+  \ see: http://www.coresecurity.com/corelabs-research/publications/deactivate-rootkit
+
+* detached HEAD after git reflog -i commithashhere
+  \ https://stackoverflow.com/questions/5772192/how-can-i-reconcile-detached-head-with-master-origin/5772882?r=SearchResults#5772882
+  \ ie. git branch -f master HEAD
+  \ ^ that's how you make master and HEAD one, so that HEAD isn't detached anymore.
+
+* reasons to use swap:
+  \ https://www.phoronix.com/forums/forum/phoronix/latest-phoronix-articles/1120793-new-low-memory-monitor-project-can-help-with-linux-s-ram-responsiveness-problem?p=1120861#post1120861
+  \ https://www.kernel.org/doc/Documentation/vm/transhuge.txt
+  \ doneTODO: find the other place where I mentioned this defragmentation issue as a reason to use swap! was it in a patch?
+  \ ^ oh yeah it's in /etc/fstab:
+  \ #ok, reason for using swap at all("kernel defragments particular structures in memory is push copy of the structure to swap then modify it"): https://www.phoronix.com/forums/forum/phoronix/general-discussion/1118164-yes-linux-does-bad-in-low-ram-memory-pressure-situations-on-the-desktop?p=1118311#post1118311
+
+* ares 6 url
+  \ https://browserbench.org/ARES-6/
+  \ seems to have disappeared at some point
+
+* stable kernel url
+  \ https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/log/?h=linux-5.2.y
+
+* ccache and changing hostname
+  \ #XXX WARNING: changing hostname will cause 'ccache internal error' counter to increase and thus ccache miss! you should also r  eboot after change to make sure it's properly propagated to running terminals
+  \ info from ~/.second_bashrc
+
+* chromium/chrome policies in Linux
+  \ https://www.chromium.org/administrators/policy-list-3
+  \ /etc/chromium/policies/managed/policies.json
+
+* how to mitmproxy https traffic:
+  \ https://github.com/mitmproxy/mitmproxy/pull/3603/files#diff-bd8c8e517f449fcb1bb7cac7997df541R89
+  \ using iptables -j REDIRECT
+  \ reproduced here:
+  * create user
+    \ sudo useradd --create-home mitmproxyuser
+  * (not needed in archlinux) install mitmproxy for used
+    \ sudo -u mitmproxyuser bash -c 'cd ~ && pip install --user mitmproxy'
+  * iptables redirect
+    \ Then, configure the iptables rules to redirect all traffic from our local machine to mitmproxy. **Note**, as soon as you run these, you won't be able to perform successful network calls *until* you start mitmproxy. If you run into issues, `iptables -t nat -F` is a heavy handed way to flush (clear) *all* the rules from the iptables `nat` table (which includes any other rules you had configured).
+    \ iptables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitmproxyuser --dport 80 -j REDIRECT --to-port 8080
+    \ iptables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitmproxyuser --dport 443 -j REDIRECT --to-port 8080
+    \ ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitmproxyuser --dport 80 -j REDIRECT --to-port 8080
+    \ ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitmproxyuser --dport 443 -j REDIRECT --to-port 8080
+    \ This will redirect the packets from all users other than `mitmproxyuser` on the machine to mitmproxy. To avoid circularity, run mitmproxy as the user `mitmproxyuser`
+  * run mitmproxy as user
+    \ //sudo -u mitmproxyuser bash -c '$HOME/.local/bin/mitmproxy --mode transparent --showhost --set block_global=false'
+    \ sudo -u mitmproxyuser bash -c 'mitmproxy --mode transparent --showhost --set block_global=false'
+    \ pass --ssl-insecure if you're using the openssl server step below.
+  * install mitmproxy cert on multiple OSes/browsers manually(because onboarding is disabled):
+    \ https://docs.mitmproxy.org/stable/concepts-certificates/
+    * on chrome/chromium:
+      \ https://stackoverflow.com/questions/7580508/getting-chrome-to-accept-self-signed-localhost-certificate/15076602#15076602
+      \ actually that needs some tweaking:
+      \ export as PKCS #7 certificate CHAIN ! give it any name (extension irrelevant)
+      \ at the Authorities->Import step, select All files, select that exported filename, when prompted it looks like:
+      \ 'The certificate "mitmproxy" represents a Certification Authority'
+      \ select only "Trust this certificate for identifying websites"
+      \ it works, tested it!
+      \ more details or to do this for Firefox too, seen in this: https://stackoverflow.com/questions/50788043/how-to-trust-self-signed-localhost-certificates-on-linux-chrome-and-firefox/50788371#50788371
+      \ actually looks like the CA cert is in ~/.mitmproxy/ so no need to export it like that(mentioned above):
+      \ -rw-r--r-- 1 user user 3022 31.08.2019 23:51 mitmproxy-ca.pem
+      \ -rw-r--r-- 1 user user 1318 31.08.2019 23:51 mitmproxy-ca-cert.pem
+      \ -rw-r--r-- 1 user user 1318 31.08.2019 23:51 mitmproxy-ca-cert.cer
+      \ -rw-r--r-- 1 user user 1140 31.08.2019 23:51 mitmproxy-ca-cert.p12
+      \ -rw-r--r-- 1 user user  770 31.08.2019 23:51 mitmproxy-dhparam.pem
+      \ -rw-r--r-- 1 user user 2529 31.08.2019 23:51 mitmproxy-ca.p12
+      \ TODO: find out which one needs to be imported!
+
+
+* host an openssl-based server:
+  * gen key/cert
+    \ openssl req -x509 -sha256 -nodes -newkey rsa:2048 -days 365 -subj "/CN=localhostd" -keyout /tmp/localhostd.pem -out /tmp/localhostdreq.pem
+  * serve
+    \ sudo openssl s_server -key /tmp/localhostd.pem -cert /tmp/localhostdreq.pem -accept 443 -www
+
+* dmesg (of util-linux after tag v2.33.2) is escaping color codes even with dmesg --raw
+  \ https://github.com/karelzak/util-linux/issues/858
+
+* x11vnc 3 second delay for first update caused by input, and then subsequent updates are 1 seconds apart, until 1-2sec of no inputs, then redo.
+  \ https://github.com/LibVNC/x11vnc/issues/102#issuecomment-528311572
+
+- oh wait nvm!! the patch wasn't actually applied because did ./2 instead of ./0 //linux kernel needs full build dir clean IFF a new sysctl option was added
+  \ such as previously compiled with le9h.patch and then you want to ./2 recompile only what changed for le9i.patch (adds an unevictable Inactive(file) sysctl)
+  \ just recompiling only what's changed didn't add the new sysctl option!!!
+  \ but
+  \ the funny thing is, that I remember modifying the files directly with vim adding the new sysctl and ./2 would still not add it  without a build dir clean! so beware!
+
+
+* slow disk read at startup even before grub, or during initramfs reading
+  \  is caused due to writing them to disk during high write traffic on btrfs
+  \ simply booting once and sudo update-grub will apparently fix this, so they'll go with fast speed on next boot!
+  \ guessing this has to do with defragmentation
+
+* experiencing stuttering and mouse lag during (huge)writes? (such as chromium compilation finishing and pacman packaging/installing)
+  \ it's, in my case, btrfs zstd:5 (try it with zstd:15,commit=300)
+  \ switching to zstd:1,commit=300 gets rid of it - tested during rsync-ing 100+G of rootfs into another Kingston SSD (of the same type)
+
+* updating certain (external) libs and not cleaning chromium's build dir may improperly build chromium
+  \ eg. I've had to manually delete out/Default/obj/third_party/webrtc/rtc_base/rtc_json/json.o
+  \ or else link-time error:
+  \ ld.lld: error: undefined symbol: Json::Value::operator=(Json::Value)
+	\ >>> referenced by json.cc:249 (../../third_party/webrtc/rtc_base/strings/json.cc:249)
+	\ >>>               obj/third_party/webrtc/rtc_base/rtc_json/json.o:(rtc::GetValueFromJsonObject(Json::Value const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, Json::Value*))
+	\ 
+	\ ld.lld: error: undefined symbol: Json::Value::operator=(Json::Value)
+	\ >>> referenced by json.cc:249 (../../third_party/webrtc/rtc_base/strings/json.cc:249)
+	\ >>>               obj/third_party/webrtc/rtc_base/rtc_json/json.o:(rtc::GetIntFromJsonObject(Json::Value const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int*))
+	\ 
+	\ ld.lld: error: undefined symbol: Json::Value::operator=(Json::Value)
+	\ >>> referenced by json.cc:249 (../../third_party/webrtc/rtc_base/strings/json.cc:249)
+	\ >>>               obj/third_party/webrtc/rtc_base/rtc_json/json.o:(rtc::GetBoolFromJsonObject(Json::Value const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool*))
+	\ 
+	\ ld.lld: error: undefined symbol: Json::Value::operator=(Json::Value)
+	\ >>> referenced by json.cc:249 (../../third_party/webrtc/rtc_base/strings/json.cc:249)
+	\ >>>               obj/third_party/webrtc/rtc_base/rtc_json/json.o:(rtc::GetDoubleFromJsonObject(Json::Value const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, double*))
+  \
+  \ this was caught, but I've had some that appear to have been due to gcc or clang, but likely were because of things like this because cleaning the build dir first, fixed the issues!
+
+
+* look at a VM's console log:
+  \ tail -F /var/log/xen/console/guest-gitsites-baseon-w-s-f-fdr28.log
+* get console access to a VM
+  \ sudo xl console untrusted-fdr28
+  \ then can login as root (no password needed)
+  * special case for sys-net
+    \ xl console -t pv sys-net
+    \ xl console -t serial sys-net
+    \ not working: xl console sys-net
+    \ working: xl console sys-net-dm  (that's a different thing tho)
+
+* fix hddtemp
+  \ it spams a notice (level 5) on dmesg/journald and thus causes disk writes every 1 sec, actual disk write ever 5 sec due to commit= of ext4 !
+  \ https://groups.google.com/d/msg/qubes-users/M6VpmkFJVfE/Tyisol_OGAAJ
+  * after updating the hddtemp package(in the future), need to do these steps again (FIXME: find another way?)
+    * sudo ln -sf /usr/sbin/hddtemp /usr/bin/hddtemp
+    * sudo chmod u+s /usr/sbin/hddtemp
+
+
+
+* protected files, in Qubes, like /etc/resolv.conf  
+  \ See: https://groups.google.com/d/msg/qubes-devel/Y2uejCh8ZbY/HBU9XijeCQAJ
+
+* howto compile AppVM kernel
+  \ https://gist.github.com/constantoverride/825717e0136f804aa6ebf66293234b57
+
+* You can prevent qubes scripts touching /etc/resolv.conf by adding it to
+  \ /etc/qubes/protected-files.d/something.conf in the template. Just create
+  \ such file (you can name it whatever you want) and put "/etc/resolv.conf"
+  \ as an only line there.
+  \ Then, you can use can modify /etc/resolv.conf as you wish and it should
+  \ stay this way, including in VMs made from this template.
+
+
+* ccache kernel w/o gcc plugins
+  \ https://groups.google.com/d/msg/qubes-users/phv-NftuM_E/Uby-9jCRAAAJ
+
+* my kernel LKML question
+  \ https://lkml.org/lkml/2018/8/22/176
+  \ https://lkml.org/lkml/2018/9/10/296
+  \ or http:
+  \ http://lkml.iu.edu/hypermail/linux/kernel/1808.2/03295.html
+  \ unfortunatelly unconnected: http://lkml.iu.edu/hypermail/linux/kernel/1809.1/00657.html
+
+* le9d.patch fixxage in kernel
+  \ https://stackoverflow.com/questions/52067753/how-to-keep-executable-code-in-memory-even-under-memory-pressure-in-linux?noredirect=1#comment95017646_52067753
+
+* why goto is good
+  \ because it's easy to miss proper shutdown procedure if you just shutdown+return instead of goto successful_shutdown  for example.
+  \ https://bugzilla.xfce.org/show_bug.cgi?id=15960
+
+* how to introduce bugs anyway:
+  \ "some timing bugs can arise because of the extra round trip." but "I don't want to expose this to PBrowser."
+  \ but hey it's a new feature so let's add it anyways.
+  \ https://hg.mozilla.org/mozilla-central/rev/2526ca5dd7b3
+  \ tef :)
+  \ side-note, different bug was also added: https://bugzilla.mozilla.org/show_bug.cgi?id=1565728#c13
+
+* gclient stall?
+  \ it's due to it calling `cipd` which in turn calls ... /opt/depot_tools/update_depot_tools ... which calls /opt/depot_tools/cipd and which eventually calls /opt/depot_tools/.cipd_client (or something, not really sure of the order)
+  \ which is doing this:
+  \ [P60273 01:00:43.514 client.go:309 W] RPC failed transiently. Will retry in 4s    {"error":"failed to send request: Post https://chrome-infra-packages.appspot.com/prpc/cipd.Repository/ResolveVersion: dial tcp: lookup chrome-infra-packages.appspot.com on 127.0.0.1:53: read udp 127.0.0.1:60858->127.0.0.1:53: read: connection refused", "host":"chrome-infra-packages.appspot.com", "method":"ResolveVersion", "service":"cipd.Repository", "sleepTime":"4s"}
+  \ and DNS lookup is not visible!!!!! (in my normal logging)
+  \
+  \ workaround: $ sudo touch /opt/depot_tools/.disable_auto_update
+  \ or fwadd temp https chrome-infra-packages.appspot.com
+
+* how to debug systemd problems
+  \ https://fedoraproject.org/wiki/How_to_debug_Systemd_problems
+
+* signed out of gmail after browser restart?
+  \ just add accounts.google.com to Allow in chrome://settings/content/cookies 
+  \ assuming you're already using(aka Enabled): Clear cookies and site data when you quit Chromium
+  \ https://support.google.com/chrome/thread/3196525?msgid=15365355
+
+* monospace font cuts off underscore or other char's bottom ?
+  \ ideas as to why: https://bugs.kde.org/show_bug.cgi?id=404907#c16
+  \ coalesced: https://github.com/microsoft/vscode/issues/35901#issuecomment-536840004
+  \ ^ use Inconsolata as Monospace font! Not DejaVu Sand Mono Book, not Noto Sans Mono
+  \ ^ Start -> Appearance -> Fonts(tab) -> Default Monospace font -> Inconsolata Regular
+  \ Nimbus Mono PS works too!
+  \ some good info&workarounds: https://bugs.archlinux.org/task/27500#comment86500
+  \ issues in chromium:
+  \ https://bugs.chromium.org/p/chromium/issues/detail?id=41457
+  \ https://bugs.chromium.org/p/chromium/issues/detail?id=700376
+  \ see which is current monospace font:
+  \ 'fc-match monospace' becomes the following if using flatpak:
+  \ $ flatpak run --command='fc-match' io.github.Hexchat monospace
+  \ DejaVuSansMono.ttf: "DejaVu Sans Mono" "Book"
+  \ change it:
+  \ change the monospace font from dejavu to inconsolata like this: https://unix.stackexchange.com/a/106170  for file /home/user/.var/app/io.github.Hexchat/config/fontconfig/fonts.conf where "Font B" is "Inconsolata" (no quotes)
+  \ file: ~/.config/fontconfig/fonts.conf
+  \ or: /home/user/.var/app/io.github.Hexchat/config/fontconfig/fonts.conf
+  \ contents(unchanged from the URL):
+  \  <match target="pattern">
+  \ <test name="family" qual="any">
+  \ <string>monospace</string>
+  \ </test>
+  \ <edit binding="strong" mode="prepend" name="family">
+  \ <string>Font B</string>
+  \ </edit>
+  \ </match>
+  \ set the hexchat gtk2 theme like: $ xfconf-query -c xsettings -p /Net/ThemeName -s win32
+  \ this affects the host apps(like hexchat and firefox when creating github issues) and the hexchat inside the flatpak!
+
+
+
+* Fontconfig error: Cannot load default config file
+  \ in chromium, it tries to access /home/user/.config/fontconfig/conf.d because fonts.conf exists in /home/user/.config/fontconfig/
+  \ actually it tries to access:
+  \ /home/user/.config/fontconfig/conf.d
+  \ /home/user/.config/fontconfig/fonts.conf
+  \ /etc/fonts/fonts.conf
+  \ /usr/share/fonts
+  \ /home/user/.local/share/fonts
+  \ /proc/self/exe
+  \ (not in this order)
+  \ and all fail with -1 EPERM (Operation not permitted)
+  \ no idea why? sandboxing?
+  \ they all exist now even conf.d and /home/user/.local/share/fonts
+
+* get rid of prealloc-type extends after the end of file on btrfs
+  \ by truncate -c -s $sizeoffile $filename
+  \ https://github.com/kilobyte/compsize/issues/27#issuecomment-538102849
+  \ thanks Zygo on freenode irc #btrfs
+  \ these are usually tikv .log files!
+  \ use this show_file.py to see the before/after of prealloc extents existence: /home/user/build/1packages/3rarelyused/python-btrfs-git/makepkg_pacman/python-btrfs-git/src/python-btrfs/examples/show_file.py
+  \ ie. show_file.py somefile.log
+
+* clean git reflog after rolling back some commits, for example.
+  \ https://stackoverflow.com/questions/5277467/how-can-i-clean-my-git-folder-cleaned-up-my-project-directory-but-git-is-sti/5277575#5277575
+  \ If you added the files and then removed them, the blobs still exist but are dangling. git fsck will list unreachable blobs, and git prune will delete them.
+  \ git fsck will not list any dangling commits or blobs, because your branch’s reflog is holding onto them. Here’s one way to ensure that only objects which are in your history proper will remain:
+  \ git reflog expire --expire=now --all
+  \ git repack -ad  # Remove dangling objects from packfiles
+  \ git prune       # Remove dangling loose objects
+
+* zstd:1 vs zstd:15 on ungoogled-chromium-77.0.3865.126_r803276.32a8dce4e6b1-1-x86_64.pkg.tar
+  \ zstd:1
+  \ $ totfull
+  \ 4.1G  .
+  \ 4.1G  total
+  \ Type       Perc     Disk Usage   Uncompressed Referenced  
+  \ TOTAL       32%      1.2G         3.7G         3.7G       
+  \ none       100%      4.3M         4.3M         4.3M       
+  \ zstd        32%      1.2G         3.7G         3.7G 
+  \
+  \ zstd:15
+  \ $ totfull ungoogled-chromium-77.0.3865.126_r803276.32a8dce4e6b1-1-x86_64.pkg.tar.zstd_15 
+  \ 4.1G  ungoogled-chromium-77.0.3865.126_r803276.32a8dce4e6b1-1-x86_64.pkg.tar.zstd_15
+  \ 4.1G  total
+  \ Type       Perc     Disk Usage   Uncompressed Referenced  
+  \ TOTAL       26%     1019M         3.7G         3.7G       
+  \ none       100%      4.5M         4.5M         4.5M       
+  \ zstd        26%     1015M         3.7G         3.7G       
+  \
+  \ it's not worth the time and CPU usage to do it! I don't know how many minutes it took to cp --reflink=never and sync, but it was quite some!
+
+
+* mount ssh/scp folder
+  \ to mount:
+  \ sshfs [user@]hostname:[directory] mountpoint
+  \ to unmount:
+  \ fusermount -u mountpoint
+
+
+* to mount vdi disk in linux(host), only when VM isn't running! obviously!
+  \ https://serverfault.com/questions/51965/mounting-opening-virtualbox-disk-image-vdi-on-linux-host/423116#423116
+  \ kernel must have CONFIG_BLK_DEV_NBD=m  (or y)
+  \ you need sudo pacman -S qemu  which brings a bunch of packages, but /usr/bin/qemu-nbd is owned by qemu 4.2.0-1
+  \ $ sudo modprobe nbd
+  \ ^ required, or else you get:
+  \ qemu-nbd: Failed to open /dev/nbd0: No such file or directory
+  \ qemu-nbd: Disconnect client, due to: Failed to read request: Unexpected end-of-file before all bytes were read
+  \ then do:
+  \ $ sudo qemu-nbd -c /dev/nbd0 ./nixos1_1.vdi 
+  \ which shows no msgs, but lsblk shows:
+  \ nbd0      43:0    0     8G  0 disk 
+  \ └─nbd0p1  43:1    0     8G  0 part 
+  \ $ sudo mount /dev/nbd0p1 3 -o ro
+  \ mounts it in dir '3' of current dir.
+  \ do stuff with mounted partition... rm/cp etc.
+  \ sudo umount 3
+  \ detach it:
+  \ $ sudo qemu-nbd -d /dev/nbd0
+  \ /dev/nbd0 disconnected
+  \
+
+* in gentoo sys-apps/man-db is lower than version 2.8.5 (2.7.6 or so) and thus has an erroneous comment
+  \ I've just confirmed that this https://git.savannah.nongnu.org/cgit/man-db.git/commit/?id=491a2f69120e6cf169902223ea490541cbf82406  is the commit that fixed that /etc/man_db.conf "# gdbm" first line and it's since correct as "# man_db.conf" and that commit is present since man-db 2.8.5 as per $ git tag --contains 491a2f69120e6cf169902223ea490541cbf82406
+
+* in uBlock Origin, wildcard in element picker
+  \ like this(but this wouldn't work):
+  \ ##.cookie-banner.jsx-*
+  \ instead this would work:
+  \ ##.cookie-banner:watch-attr(/^jsx-/)
+  \ in My filters looks like:
+  \ www.tiktok.com##.cookie-banner:watch-attr(/^jsx-/)
+  \ and it matches:
+  \ ##.cookie-banner.jsx-1369390657
+
+* in archlinux recompiling kernel happens from zero (7min with ccache 99% hits tho) if you just sudo touch /usr/include/asm-generic/types.h which is what a newer linux-api-headers package basically does (but apparently not the older ones like from a prev. kernel, unsure why that didn't cause a recompilation)
+  \ so that's why I was avoiding installing linux-api-headers
+
+* can exec script as root(password prompted, unless cached, ofc) simpler like:
+  \ #!/bin/sudo /bin/bash
+  \ id
+
+* find out what's the syscall number mapping to
+  \ $ firejail --debug-syscalls | grep 315
+  \ 315 - sched_getattr
+  \ in archlinux you need sudo pacman -S firejail, thanks <airgap>, on #archlinux freenode irc, for this method!
+
+* find out what a syscall name maps to which number
+  \ printf SYS_sched_getattr | gcc -include sys/syscall.h -E -
+  \ thanks to <eschwartz> on #archlinux freenode irc
+
+* these two firmwares are missing on ArchLinux on Z575
+  \ ==> WARNING: Possibly missing firmware for module: aic94xx
+  \ ==> WARNING: Possibly missing firmware for module: wd719x
+  \ there's a doc for wd719x in /home/user/build/1packages/4used/kernel/linux-stable/makepkg_pacman/linux-stable/src/linux-stable/Documentation/scsi/wd719x.txt
+  \ but both firmwares were present in package manjaro-firmware on Manjaro!
+  \ looks like the warnings appear only on the fallback image generation and in fact those two modules' firmware isn't needed because I don't use them!
+  \ they were two warning on ArchLinux when running mkinitcpio but as someone explained: <Namarrgon> the fallback preset skips the "autodetect" hook, so includes the whole range of modules, even if you don't use them <Namarrgon> that's why you see the two warnings only for the fallback image.
+
+* phone file transfer PTP aka how to mount your mobile phone sdcard/data wtw (keywords for search purposes)
+  \ see your device(s): $ gio mount -li
+  \ run this first:
+  \ $ gio mount mtp://MediaTek_HT16_Q8KR49GADMU889B6/
+  \ it will fail but now phone allows you to choose  File Transfers MTP  so choose it!
+  \ rerun it and it will work now:
+  \ $ gio mount mtp://MediaTek_HT16_Q8KR49GADMU889B6/
+  \ cd /run/user/1000/gvfs/mtp\:host\=MediaTek_HT16_Q8KR49GADMU889B6/
+  \ do whatever
+  \ unmount: gio mount -u mtp://MediaTek_HT16_Q8KR49GADMU889B6/
+  \ the (external) SD card is also accessible!
+
+* dump python stacktrace
+  \ maybe faulthandler.dump_traceback(file=sys.stderr, all_threads=True) src: https://docs.python.org/3/library/faulthandler.html
+  \ this stops execution: raise RuntimeError('something bad happened!')
+  \ but shows the traceback
+  \ this is it:
+  \ import traceback
+  \ ...
+  \ traceback.print_stack()
+  \ ^ src: https://docs.python.org/2/library/traceback.html   also for python3 https://docs.python.org/3/library/traceback.html
+
+* ebuild phase function names eg. src_prepare() src_install()
+  \ https://devmanual.gentoo.org/ebuild-writing/functions/index.html
+  \ each of those can have a pre_* and post_* which are hookable aka can be defined as functions in eg. /etc/portage/env/net-misc/openssh (non-executable file which will be sourced!)
+
+* march native
+  \ to see what -march=native  resolves to in gcc/clang/rust:
+  \
+  \ $ gcc -### -E -march=native -
+  \ $ clang -### -E -march=native -
+  \ $ rustc -C target-cpu=help|head -2
+  \ or:
+  \ $ rustc --print target-features | head -2
+  \
+  \ src: https://github.com/rust-lang/rust/issues/53322#issuecomment-423472658
+  \ src: https://github.com/rust-lang/rust/issues/48464#issuecomment-367987248
+  \ src: https://github.com/rust-lang/rust/issues/48464#issuecomment-367982592
+  \ src: https://github.com/rust-lang/rust/issues/48464#issuecomment-367957922
+
+* test if your browser's javascript is functioning properly
+  \ https://kangax.github.io/compat-table/es6/
+  \ on my locally built firefox, it wasn't! see: https://bugs.gentoo.org/717374#c8
+
+* clipman is saving history in file /home/user/.cache/xfce4/clipman/textsrc
+  \ that is: xfce4-clipman-plugin package in archlinux
+
+* rustc equivalents
+  * rustc --print target-cpus
+    \ rustc -C target-cpu=help
+    \ if you get: Target CPU help is not supported by this LLVM version.
+    \ you may need this patch: https://github.com/rust-lang/llvm/commit/68e1e29618b
+    \ untested yet! but gentoo may need it! 28nov2020
+
+* json_reformat is in dev-libs/yajl on gentoo
+  \ # time emerge -nav dev-libs/yajl
+  \ on ArchLinux: /usr/bin/json_reformat is owned by yajl 2.1.0-3
+
+* how many CPUs/processors are online? to use with eg. 'make -j'
+  \ /usr/bin/getconf _NPROCESSORS_ONLN
+  \ output: 4
+  \ on Z575
+
+* to play .cue files inside vlc you need USE=lua
+  \ because the plugin for reading .cue files is a LUA script
+  \ not all .cue files will be seen rightly by vlc, so expect some to not work and when played for the playback to get stuck on it with no time being displayed ie. --:--
+  \ all tracks when under play will have their length set to flac/ape length and start time is relative to that base file. Possibly by design because the track does stop at the time when .cue says it should and next track is played then, even though length of track is wrong (= flac len!)
+
+* what I've to do to install -9999 aka git packages on Gentoo
+  \ TODO: fix this so that git fetch happens in the same place inside portage/emerge that normal file fetch happens, so then you can use --fetchonly for example!
+  * sudo chown portage:portage -R -- /var/cache/distfiles/git3-src/ ; /home/user/fw out
+    \ so that portage can git fetch the upstream as portage (bug)
+    \ then I open firewall to can git pull
+  * emerge -nav thatpackage
+    \ thatpackage-9999
+  * sudo chown root:root -R -- /var/cache/distfiles/git3-src/ ; /home/user/fw
+    \ make those root owned so they can't be modified by portage user in wtw case!
+    \ re-enable firewall
+  * made an alias for above(in root user):
+    \ liverebuild is aliased to `chown portage:portage -R -- /var/cache/distfiles/git3-src/ ; /home/user/fw out ; time smart-live-rebuild ; chown root:root -R -- /var/cache/distfiles/git3-src/ ; /home/user/fw'
+
+* clipboard(MMB paste) is lost if you use xfce4-terminal --disable-server OR just 'qterminal'
+  \ after the specific terminal exits
+  \ unless you either use xfce4-clipman (an xfce4-panel plugin!)
+  \ OR you don't specify --disable-server and thus don't use qterminal
+
+* epub reader?
+  \ emerge -nav app-text/coolreader
+
+* if you want an ArchLinux use ArtixLinux
+  \ artixlinux.org
+  \ it can do init systems: openrc, s6, runit
+
+* idle: no python-exec wrapped executable found in /usr/lib/python-exec.
+  \ re-emerge python with USE=tk
+  \ https://forums.gentoo.org/viewtopic-p-8610234.html#8610234
+  \ idle is The Graphical Shell Python (called IDLE)
+
+* to get the symbols of a coredump in gdb, on Gentoo
+  \ you've to pass path to executable on cmdline, eg.:
+  \ gdb -c coredumped.comm_w3m.uid0_gid0_dumptime1621449795_host_i87k_path_\!usr\!bin\!w3m.sig6_pid273883_tid273883.coredump -q /usr/bin/w3m
+  \ -q is quiet
+  \ otherwise you see only '??' stuff!
+  \ when you pass executable you see it load symbols like:
+  \ Reading symbols from /usr/bin/w3m...
+  \ Reading symbols from /usr/lib/debug//usr/bin/w3m.debug...
+
+* chromium dictionary?
+  \ /home/user/.config/chromium/Dictionaries/en-US-8-0.bdic
+  \ NOT a symlink which points to /home/user/SOURCE/.config/chromium/Dictionaries/en-US-8-0.bdic
+  \ that's right, NOT!
+
+* "bwrap: setting up uid map: Permission denied"
+  \ it's because bwrap isn't 'suid' and it needs to be (eg. USE=suid was used instead of USE=-suid and that's why it needs to be suid but wasn't because it was NOT listed in /etc/portage/suidctl.conf)
+
+* in linux kernel dumpstack by calling dump_stack(); (might need #include <linux/kernel.h> )
+  \ or worst case: WARN_ON(1);
+
+* protonmail needs about:config firefox settings to work:
+  \ javascript.options.asmjs true
+  \ javascript.options.wasm_optimizingjit true
+
+* patch command uses .orig file extension when saving previous file about to be patched, so it will overwrite your manually saved .orig file
+  \ export SIMPLE_BACKUP_SUFFIX=".before_patch_was_called_as_root" #this is used by 'patch' instead of ".orig"
+  \ can use this to change from .orig extension to ^ that one.
+
+

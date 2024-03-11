@@ -1,0 +1,2449 @@
+* Legend:
+  \ * to be done
+  \ - done
+  \ - // don't need to do anymore
+  \ \ comments or description
+
+* remember tlp and powertop when installing in arch(arch=archlinux but we're going gentoo now instead!)
+  \ systemctl status tlp    if not enabled, enable it!
+  * tlp is a bunch of scripts for arch or manjaro; doesn't exist on gentoo
+* find out what other errors happen on reboot
+  * find a way to delay/stop(wait for Enter to be pressed) the rebooting action at the end, so to can read the msgs!(since they won't hit the disk due to mounted ro)
+
+* note the mc macrovariables like %D %d %p %p etc
+  \ http://www.softpanorama.org/OFM/MC/macrovariables.shtml
+
+* acpidump corrupted double linked list
+  * test the new version to see if it's fixed
+* add that acpi_debug.txt patch to kernel PKGBUILD to avoid getting dmesg spam
+
+* vgacon scrollback buffer
+  * DO THIS FIRST maybe merge the two patches, because it's getting harder to maintain/add features to only one of them
+  * shift+up/down should scroll up/down only 1 line per keypress
+  * find a way to add shift+ctrl+PgUp go to top of SB and shift+ctrl+PgDn to go to end
+  * find a way to prevent new output from messing up the scrollback position
+  * remember scrollback position even after switching consoles
+  * find a way to dump contents of scrollback buffer
+    * allow only root to do it
+      * maybe expose it in /sys/class/vtconsole/
+  * printk when console scrollbuffer is being allocated (aside from first time, which is already printed)
+* see if we can use this bash history audit thing
+  \ http://www.pointsoftware.ch/howto-bash-audit-command-logger/
+* use set -e
+  \ makepkg is likely using it for PKGBUILD
+* find out why bash completion for tlp isn't working? file is in: /etc/bash_completion.d
+* urxvt
+  * make shift+mousewheel scroll horizontally (shouldn't be too hard by modyfing the mouse scrollwheel patch)
+  - investigate a slowdown and cpu 100% usage issue with urxvt when it processed many screens of text, works in normal screen but also with secondScreen (ie. less) it will scroll slower as PgDn is held during less, and scroll faster again as PgUp is coming near the top of the file in less.
+  \ this doesn't seem to happen with seq  seq 100000|less
+  \ but happens with grep -r kernel --exclude-dir=.config --exclude-dir=build|less  in my home dir (i see lots of urls tho)
+  \ wow PgDn scroll is done line by line, i just realize - it became that slow that I can see it - maybe less is doing this line-by-line scrolling, and it's slow because urxvt got slow although since we're in secondScreen, it isn't really supposed to be storing the scrolllines, right?
+  \ FOUND: it's because of long lines (no \n) like 72000 chars line will slow down pagedown scroll in less to the point that you can see line-by-line scrolling when trying pagedown once.
+  * find out why switching window to bigger (Ctrl+Alt+4) causes:
+  \ error: command terminated by signal 13: Broken pipe
+  \ while compiling linux-git
+  \ and when pacman is prompting it exits with: :: Proceed with installation? [Y/n] -----------
+  \ that --- is from pacman, supposed to be on next line tho
+  \ NOTE: this also happens during mouse window resize(ie. Alt+F8) when size changes (rows/columns!)
+  * (like impossible) make ability to select with the mouse, more than one screen while in secondScreen (ie. less) - currently the selection deselects if moved outside top/bottom. 
+  * explore this urxvt perl script, just in case I want to do something similar or even use this one.
+    \ https://github.com/johntyree/urxvt-perls/blob/master/rotate-colors
+  - make less enter second screen (when used from git diff, 'cause otherwise less worked ok) and thus allows scrollwheel patch to work
+  * make numEnter do Enter in less while search is on, pressing / key
+  * find a way to copy to clipboard(the clipboard that eg. mousepad uses when Ctrl+C) via keyboard, so that Ctrl+Alt+V pastes it! while middle click pastes the other clipboard(X clipboard?)
+  * see the clipboard options here https://github.com/muennich/urxvt-perls
+  * find a way to change title bar to reflect currently executing command not just current folder
+  - patch urxvt to add 2 more options to set border color when not in focus, just like fading happens when not in focus
+  * find a way to make shift+up/down arrows scroll buffer
+  - fixed a bunch with xmodmap
+  \ https://wiki.archlinux.org/index.php/rxvt-unicode#My_numerical_keypad_acts_weird_and_generates_differing_output.3F_.28e.g._in_vim.29
+  - Home/End keys on keypad, inside vim command ":" mode aren't working as normal Home/End keys, but do work in xfce4-terminal
+  - Ctrl+left/right don't jump one word, but do  in xfce4-terminal
+  \ in .inputrc
+  \ "\eOc": forward-word     # Ctrl+right  => forward word
+  \ "\eOd": backward-word    # Ctrl+left   => backward word
+  - Home/End on keypad, while in mc, not working
+  * find a way to paste a line that's on two lines(in mc viewer only!), but it's obviously just one, paste it as one line instead of two - xfce4-terminal does it correctly
+    \ actually this works fine in bash
+    \ but not within midnight commander's file viewer, with word wrap on (F2)
+    \ neither urxvt nor xfce4-terminal work with this case!
+    \ in mc with mouse disabled (mc --nomouse) still doesn't work, - it works in vim editor or bash command line
+  * when word wrap isn't on (F2) in mc, searching for something (F7, Shift+F7) doesn't show it on screen if it's past the screen on the same line to the right.
+  - apply this urxvt patch for Ctrl+L (try `seq 1000` then C-L, scroll up, they're gone from 980->1000)
+    \ this one's better: https://github.com/jjk-jacky/rxvt-unicode/commits/clear
+    \ maybe this one's better: https://gist.github.com/anonymous/2559054
+    \ https://bbs.archlinux.org/viewtopic.php?id=129302
+  - scrolldown with mouse wheel while viewing a man page doesn't work as long as the text below wasn't already seen/loaded before. works with xfce4-terminal though
+    \ apply this urxvt patch https://github.com/jjk-jacky/rxvt-unicode/commit/bf7f54bc2449372b5061cf4e50106be252bc0f71
+  - numpad PgUp/PgDn in less, not working
+* vim
+  * see why vim doesn't know how to indent PKGBUILD when function names contain _ and - such as package_linux-git-headers()  all inner code is indented with 0 spaces
+  * numpad keys: up/down/Home/End/5/left/right (except PgUp and PgDn) are broken in vim!
+    \ well it's because something was overriding xmodmap so I had to reload it: xmodmap ~/.Xmodmap
+    - fixed that by making sure /etc/profile reloads xmodmap from ~
+      * found it! - sometimes pacman installs execute this: source /etc/profile  which does change the mapping of keys and requires running: xmodmap ~/Xmodmap !! finally this issue is found!
+    * TODO: test open vim and enter insert mode then Ctrl+Left to see if it works, if it doesn't make sure xmodmap is loaded in xinitrc ! 'cause this fixes it when reloading it in terminal.
+    \ maybe that's why I was getting some lockups in mc with keypad keys hmm
+      * nope that's not why, see why keypad keys and up/down of non-keypad keys for example(not just them) lock-up in some cases, not sure what's the fix! but xmodmap (re)loading isn't it but seems to happen after a vim session while in mc. Could be urxvt doing it, quitting the terminal altogether is the "solution" for that terminal. Starting up a new one works fine, but just quitting mc, loading xmodmap and starting mc again doesn't unlock the keys.
+        \ this is a different issue, apparently related to mc !! probably not urxvt because I remember xfce4-terminal having the same issue in mc
+        \ this doesn't modify xmodmap at all! at least not the -pke part And the -pk part!
+        \ but quitting mc and re-entering does fix it! and what brokes it is running a command, like ls, then when back: broken  ie. keypad star  key
+        \ changing folder(ie. enter on it) fixes it also!
+        * need to check if executing 'cd' (when pressing enter on a folder) does anything different from executing a cmd like 'ls' - maybe the former restores some things!
+  - see why vim doesn't enter second screen (as per urxvt) but less does
+    \ so, while in vim, mousewheelup will scroll past the vim screen into what was in the shell before
+    \ actually less doesn't either, at least when there's scrollback(which is not what you have when you just started the terminal)
+    \ works with jjacky's mouseWheel patch
+  - make background transparent, or urxvt's second screen background transparent
+  - make blue line show ok on blue text, eg. /usr/include/X11/keysymdef.h
+    \ hi CursorLine   cterm=NONE ctermbg=darkred ctermfg=white guibg=darkred guifg=white
+    \ actually, made it bold: highlight CursorLine cterm=bold
+  - check why shift+left/right works to move past words but ctrl+left/right doesn't!
+    \ both versions were working with xfce4-terminal, in both insert and non-edit modes
+* check if xmodmap can be used to set mouse button 8&9 (as per xev) as being the mod3 modifier and thus can be used to move windows while held, currently Ctrl
+  \ see this when ready to map mouse buttons to keyboard keys https://wiki.archlinux.org/index.php/All_Mouse_Buttons_Working#evrouter
+* edit color for mc .xml files to not be so similar to selection color (yellow)
+  * find where this is - maybe in the theme? the group for it is [doc] though
+  - changed theme - temporary workaround
+* finish the script for kernel 3.15 from 3.16
+  - recompile next rc version
+  - empty ~/.ccache before building kernel - 975M so far
+* find place in workflowy*.wofl file to place these:
+  * alternative email services to consider (aside from openmailbox.org ) if ever needed(in this order):
+    * https://startmail.com
+      \ doesn't have threads view of email (like gmail.com and openmailbox.org have and also riseup.net because they are using roundcube)
+    * riseup.net
+    * https://www.mailfence.com/
+    * https://www.vmail.me/en/
+    * https://bitmessage.ch
+
+* read about traffic shaping / QoS
+  \ http://www.lartc.org/howto/
+  \ and http://shorewall.net/simple_traffic_shaping.html
+  \ and http://wiki.linuxwall.info/doku.php/en:ressources:dossiers:networking:traffic_control#motivation
+  * need a better traffic shaper (wondershaper limits download rate for no reason, to like 40KB/s)
+
+* add different timer to mouse suspend, but allow it to suspend(rather than make it stay on all the time as it is now)
+  \ by peeking at dmsg: [    3.244601] input: Genius 2.4G Wireless BlueEye Mouse as /devices/pci0000:00/0000:00:12.0/usb3/3-3/3-3:1.0/0003:0458:00F2.0001/input/input8
+  \ the folder is /sys//devices/pci0000:00/0000:00:12.0/usb3/3-3//power/autosuspend_delay_ms
+  \ so echo there (currently 2000 ms) something like 600000 (10mins)
+  \ # echo '600000' > /sys//devices/pci0000:00/0000:00:12.0/usb3/3-3//power/autosuspend_delay_ms
+  \ it'd be still better than nothing!
+* something happened with -+* on numpad while numlock is off, inside mc - investigate why they lockup
+  \ look for this in sourcecode: 
+  \    * use Num_Lock to toggle Keypad on/off.  If Num_Lock is off, allow an
+  \    * escape sequence to toggle the Keypad.
+  \ also pressing enter after returning from shell, makes +-* work again!
+  
+* fix acpi_call (package acpi_call-git-dkms ) from not compiling on 3.17-rc1
+* nftables
+  \ http://www.netfilter.org/projects/nftables/
+  \ http://wiki.nftables.org/wiki-nftables/index.php/Main_Page
+* explore kernel option related to using custom DSDT
+  \ ACPI_CUSTOM_DSDT_FILE
+  \ see if DSDT is being used to set CPU voltages/multipliers maybe we can use this to replace amdmsrtweaker this way
+  \ also this: Documentation/acpi/initrd_table_override.txt
+* when yaourt building a package, before build happens  some prerequisites might need installing and if they do, sudo password is given and I presume cached normally - if it's cached normally then a script could call sudo and no pass prompt would happen
+* need to disable systemd-tmpfiles-clean from running whenever! just k-line it!
+
+* investigate the epic lockup from accidentally doing: vim file|less
+* include in kernel uname -a  the type (git, tip, next) so that we know which one we're running, typically tip was running before git, since it's last in /etc/mkinitcpio.d/
+* fix acpi_call building for the wrong(current) kernel with dkms, even though the kernel version is being specified! see bugs/dkms/acpi_call
+* get rid of mdm and all of its dependencies!
+* see why bootsector(from boot partition) not mbr is messed up after plugging msproduo in 750 - maybe they rewrite it with some evil bootsector?
+  \ this fixed it:  sudo syslinux -i -d /Boot/Settings /dev/sdc1
+* make gopreplinks prompt to remove any /tmp/ symlinks unless any of them are dirs
+  \ this allows building anything without manually having to remove those links
+* check that coreboot/libreboot BIOS to see if we can replace bios
+  \ http://www.coreboot.org/Supported_Chipsets_and_Devices
+* ensure machine-id is not existing OR use a generic one like 01234...etc.
+  \ /etc/machine-id and /var/lib/dbus/machine-id
+  \ pulse-audio will stop working if the /etc/ one is moved, ie. when trying to play youtube videos in chromium - will work again after chromium restart(if that file is put back) - maybe will work again after reboot
+
+
+* Z575 underclocking info
+  \ good undervolt info DSDT ACPI http://forum.notebookreview.com/acer/480992-acer-laptop-phoenix-bios-bios-mod-request.html#post6212306
+  \ good read on overclocking and MSR http://www.overclock.net/t/1205257/overclock-cpu-in-linux-necessary-program-names-given
+  \ these were the latest (windows) May 29, 2014 at 9:39 am k10stat: http://i.imgur.com/98BV47U.jpg , fusiontweaker: http://i.imgur.com/QHd5D48.jpg
+  * pics of the new memory(RAM) http://imgur.com/a/synyN
+  * pics of the old memory RAM http://imgur.com/a/buk20
+  * disassembling z575 https://www.youtube.com/watch?v=pqN1m5zhnww
+  * my cpu-z (old pics): http://imgur.com/a/PyzjF
+
+* read more on powersave
+  \ http://www.ibm.com/developerworks/library/l-cpufreq-1/l-cpufreq-1-pdf.pdf
+* memory SPD info
+  \ SPD: http://www.simmtester.com/page/news/showpubnews.asp?num=153
+  \ exactly what i wanted to have confirmed: http://www.tomshardware.co.uk/forum/281464-30-corsair-xms3-1600mhz-corsair-dominator-2133mhz#4291955 and what I did with the new ram
+
+* grsecurity kernel
+
+
+* a stop job is in progress for ... remove that timeout from systemd!
+  - yaourt -S systemd-git
+
+
+* cd /sys/devices/pci0000:00/0000:00:13.2/usb2
+  \ see if we should disconnect that hub, and then the usb1.1 one on 13.0 (as opposed to usb2.0 on 13.2)
+  \ if we disconnect hub, then we can't bring it back, I believe; however it is in idle/suspended mode right now;
+
+
+* psd firefox https://wiki.archlinux.org/index.php/Profile-sync-daemon#Benefits_of_psd
+
+* make ccd in ~/bin/ to cd to passed param and if this is a file then cd to its folder instead - should easy copy/pasting e.g. from git status
+
+* ASD - look into using this, possibly for pacman/makepkg compilations
+  \ https://wiki.archlinux.org/index.php/Anything-sync-daemon
+
+* install gentoo
+  * in VM
+  * on SSD
+
+* gentoo
+  *  I think it'd be a great idea to make a link from 5.b. in the Handbook to https://www.gentoo.org/proj/en/releng/#doc_chap5  because that tells how to get the keys too (also shasum -c)
+    \ <kurly> amanual: make a patch, submit a bug on bugs.gentoo.org, and your change may well be accepted :)
+    \ sources: http://sources.gentoo.org/cgi-bin/viewvc.cgi/gentoo/xml/htdocs/doc/en/handbook/  no https and it's cvs, weird hmm
+    \ now that I think about it, the steps and the link are provided in a previous section(when getting the iso) in section 2.c. of the Handbook
+    \ but it may still be a good idea to mention all that in 5.b.
+    * hmm, could even add those keys (from that url) into the livecd iso as trusted already - unless hmm maybe in case they get compromised in the future and the iso is now outdated, they don't want the user who uses the iso to think they are still trusted/valid 
+  * add mount -t tmpfs tmpfs /mnt/gentoo/tmp/  to Code Listing 1.4: Mounting /proc and /dev in the Handbook
+  * don't use systemd! but rather openrc!
+
+
+
+* use this email client:
+  \ https://github.com/sup-heliotrope/sup/wiki/Complete-gmail-configuration
+
+* ssh key from gpg  (instead of from ~/.ssh/ )
+  \ https://inuits.eu/blog/ssh-authentication-your-pgp-key
+  \ https://github.com/sup-heliotrope/sup/wiki/Securely-Store-Password
+
+* find out if gpg --refresh-keys  can overwrite existing keys completely, so that their fingerprints for example gets changed and thus invalidating any previous manually done verification (this shouldn't happen if I signed those with my own key, right?)
+
+* gentoo TODO
+  * shouldn't size be first in this:
+    \ tail -f /var/log/emerge-fetch.log
+    \ * gentoo-syntax-20130619.tar.bz2 SHA256 SHA512 WHIRLPOOL size ;-) ...    [ ok ]
+    \ size should be checked first because it consumes less cpu cycles to detect broken/malicious download than doing a checksum first
+  * FEATURES flags that require other things to exist.
+    \ so check that these are satisfied (in gentoo_vm.wofl)
+    - fakeroot
+      \ requires fakeroot(8)
+      \ emerge --ask sys-apps/fakeroot
+    * ipc-sandbox
+      \ Requires IPC namespace support in kernel.
+    * network-sandbox
+      \ Requires network namespace support in kernel.
+    * prelink-checksums
+      \ needs prelink(8) to be installed
+  * see why ACCEPT_LICENSE="-* @FREE" masks kernel sources:
+    \ !!! The following installed packages are masked:
+    \ - sys-kernel/gentoo-sources-3.17.7::gentoo (masked by: freedist license(s))
+    \ A copy of the 'freedist' license is located at '/usr/portage/licenses/freedist'.
+
+
+
+* add RAIN (cpu cool hlt instructions) while in GRUB menu/commandline to avoid 100% cpu usage!
+  \ remember RAIN from DOS? it would act like Windows' System Idle cooling the cpu with hlt instructions
+
+
+* investigate in bash, why "rm some\ files\ *" will remove(and tab show) "some Files *" notice the f vs F
+
+* use i8042.c to add code to detect if a key is getting duplicated too soon, because I'm often getting double keys when I type - so it's either hardware, or software, either way hopefuly detectable with i8042
+  * show only duplicated keys instead of all
+
+
+* this kernel bug: https://bugzilla.kernel.org/show_bug.cgi?id=47331
+
+* investigate why, on gentoo, in chroot(at least), on bash prompt, when freshly returned to prompt, pressing Shift+1 aka tilde(~) will not show it! pressing it again shows it once as: ~  but if instead pressing another key like 1, then both are shown at once(~1). What's with not showing it? and just pressing ~ and enter, shows it and obviously: bash: /root: Is a directory
+
+
+* fix volume notifier(on top right in xfce4, when Fn+Left/RightArrows, or volup/voldown keys are pressed) from stealing focus, which it does only after it dissapears(fade out).
+  \ well, can't reproduce this anymore!
+  \ it's back again, maybe happens only with vlc playing(but not focused), and urxvt being focused
+
+
+* cd /etc/default && colordiff -up tlp tlp.pacnew |less
+  \ on Manjaro
+
+* fix script: vim ~/bin/hasaccess
+  \ on Manjaro
+
+* make the eutils.eclass epatch  patch report only when /etc/portage/patches is a symlink - to avoid too many warnings; even though this limits the case severely
+
+* make `quilt edit` work if `quilt files` reports only one file, so `quilt edit` will just edit that file
+
+* make a note and save /etc/portage/bashrc and apply the eutils.eclass patch(es)
+
+* use mosh
+
+* bash: investigate why "{#coment" gives syntax error for a function definition like "isnum()\n{#comment"  but "{ #comment" works.
+
+
+* gentoo: add grub patches(from gentoo_vm.wofl, the sed ones) or can't boot! - looks like this was because forgot to moount /but
+  \ after fixing prefix and root via set, enter menu by:
+  \ insmod normal
+  \ normal
+  \ the prefix should be pointing to grub folder like: 
+  \ set prefix=(lvm/vgall-bootlvol)/grub
+  \ set root=(lvm/vgall-bootlvol)
+  * add them as portage patches, don't just run sed again - because they get overwritted on next grub install or something.
+    * see if can integrate them in wofl at that stage and replace sed
+
+* gentoo:
+  * tmux:
+    * find out how to:
+      * scroll up
+      * detach
+  * add note to edit /etc/ssh/sshd_config  to set UseDNS to no because without LAN, sshd tries to reverse PTR the hostname that I'm connecting from.
+  * stop netmount from auto running at boot, and add to wofl
+
+* maybe add a function to funx.bash that will save current bash settings(like shopt) and allow you to embed them in the script to warn the user that some settings are different than what the script author used when testing/running that script, so as to know that if something goes wrong, to flip some settings.
+
+* ensure_existing_commands_or_die
+  * make sure this shows the type of command when error-ing! due to 'none' meaning it found a command and is of certain type instead!
+  * use funx.bash in trimtest script
+    * make all funx.bash functions readonly
+    - make 2 funcs to start and stop block that has set +e respectively set -e; and the stopcmd will return the same $? as exit code from the function, thus keeping the exit code without requiring caller to catch it before calling stopcmd.
+      \ forgot where exactly I wanted to use this, oh yeah: executing commands! I forgot -e is not -x
+      \ done: startexternal / stopexternal
+  * maybe add %type% and expand it to eg. builtin, and %cmd% to command; so it can be used in that on die msg.
+
+* use the hasaccess script's code into eutil.class epatch_user() to detect exactly which part of the path is inaccessible and differentiate between non-existing path and existing but permission denied one.
+
+* switch from xfce4-sensors to conky
+  \ https://wiki.archlinux.org/index.php/Conky#Prevent_flickering
+  * only if it has temp sensors!
+
+* switch from bash to zsh
+
+* find all bash scripts that I have (in ~)
+  - replace == with 'test', unless regex was needed
+    - = should be used with the test command for POSIX conformance.
+  - search for [ and replace with test
+  - replace all [[ with 'test'
+    \ because that arithmetic double expansion
+    \ grep -nr -- "\[\["
+    \ grep -nrF -- '[['
+  - mktemp invocations must have corresponding traps
+    \ trap cleanup 0
+    \ https://docs.fedoraproject.org/en-US/Fedora_Security_Team/1/html/Defensive_Coding/sect-Defensive_Coding-Shell-Temporary_Files.html
+  * Guarding shell scripts against changes
+    \ main "$@" ; exit $?
+    \ https://docs.fedoraproject.org/en-US/Fedora_Security_Team/1/html/Defensive_Coding/sect-Defensive_Coding-Shell-Edit_Guard.html
+
+* add to i8042 code a counter of how many keys were pressed and released
+  \ for statistics, just like .bash_history
+  * ignore some key releases like: e0(224) aka #096
+  * see how to export it via /sys or /proc
+    * autosave on shutdown/restart
+
+* replace all bash scripts with their zsh counterparts OR abort doing any scripts unless something better like python or rust
+  * postpone this until set -x is properly displaying $0:$LINENO
+
+* need a way to crypt (probably using pub/priv keys) such that there are two keys: one for read and one for write; so that if read is ever required (eg. for the govt.) then only the read key needs to be provided; so this way they cannot implant evidence.
+  \ although they can still write physical sectors and could in theory brute force write stuff and check the read data for validity to what they actually want to write - so this way they could eventually write whatever they wanted.
+  \ Unsure how possible this is atm.
+
+* put ssh key on a luks container or something and mount only when needed
+  * make a symlink of the keyfiles to the where container will be mounted
+  * make ssh alias which would mount container if it wasn't mounted, and possibly unmount it when done
+
+* replace echo -n  with printf?
+  \ https://github.com/gentoo/netifrc/pull/10#issuecomment-76241328
+  \ because it's not portable
+  \ or maybe do this only in the future, because I am counting on scripts using echo -n to be run in bash
+  \ zsh does know of echo -n  and it displays it nicely with a % at the end while still new-lining for readability. Good for you!
+
+* apply workround https://bugzilla.kernel.org/show_bug.cgi?id=91191#c34
+  * also find out exactly why that happens
+    \ it's not ideapad_laptop module! it's acpi something
+
+* check if gentoo has hosts.deny since Manjaro/Arch Linux does't
+
+* git patch to use proper .git repo for git diff
+  \ git diff can get multiple file args!
+  \ git diff "/home/emacs/vmb/build/chromium-dev-git/fetch_gclient_base/checkout_root/src/third_party/WebKit/Source/bindings/bindings.gni"
+  \ ^ that will not cd to that folder and git diff bindings.gni ! which is what I propose, because otherwise it fails, or if another .git repo is in current folder the diff will be silently empty!
+  \ since git diff can get multiple file args, the .git repo should be recomputed for each file arg before diff-ing
+  * get in source code and add this patch
+
+* check if chromium still shows this broken jpeg after a few F5 refreshes
+  \ https://scontent-fra.cdninstagram.com/hphotos-xaf1/t51.2885-15/e15/11008134_764460296955897_1969655048_n.jpg
+  \ also if it's fixed
+  \ Corrupt JPEG data: premature end of data segment
+  \ may also show this:
+  \ [5288:5288:0318/204243:ERROR:navigation_entry_screenshot_manager.cc(153)] Invalid entry with unique id: 286
+
+* get this git signing in place
+  \ https://ariejan.net/2014/06/04/gpg-sign-your-git-commits/
+  \ https://git-scm.herokuapp.com/book/es/v2/Git-Tools-Signing-Your-Work
+  \ http://mikegerwitz.com/papers/git-horror-story
+
+* distributed hash tables
+  \ Kademlia https://en.wikipedia.org/wiki/Kademlia
+  \ that seems to describe the same thing that Steve Gibson described in the distributed hash tables episode
+
+* get aria2c instead of curl/wget  I guess
+  \ https://calomel.org/aria2.html
+
+* what in the world, libdrm
+  \ * QA Notice: Package triggers severe warnings which indicate that it
+  \ *            may exhibit random runtime failures.
+  \ * /var/tmp/portage/x11-libs/libdrm-2.4.60/work/libdrm-2.4.60/xf86drmSL.c:273:8: warning: 'update[0]' is used uninitialized in this function [-Wuninitialized]
+  \ * /var/tmp/portage/x11-libs/libdrm-2.4.60/work/libdrm-2.4.60/xf86drmMode.c:861:15: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+  \ http://lists.freedesktop.org/archives/mesa-dev/2012-July/023730.html
+
+* undefined symbol: vgaHWFreeHWRec 
+  \ https://forums.gentoo.org/viewtopic-p-7695994.html
+  \ fixed by choosing a vanilla 4.9.2 gcc (also not using ccache for other errors like PIC) but not 4.8.3 (that gave other errors)
+
+
+* need to add this to once per day or something
+  \ sudo ntpdate -s time.nist.gov
+
+* this is nolonger valid about deleted certs inside firefox
+  \ src: https://wiki.mozilla.org/CA:UserCertDB
+  \ "Important: Deleting a root certificate that is in the default root store is equivalent to turning off all of the trust bits for that root. Therefore, even though the root certificate will re-appear in the Certificate Manager, it will be treated as though you changed the trust bits of that root certificate to turn them all off."
+  \ XXX: what actually happens is, you delete the cert(even if it has all 3 options unset: to not trust it to identify websites, email and software), it comes back with the trust it to identify websites bit set!!
+  \ tested on https://forum.videolan.org/ with cert named UTN-USERFirst-Hardware  serial: 44:BE:0C:8B:50:00:24:B4:11:D3:36:2A:FE:65:0A:FD
+
+* interesting, bash globing is case-insensitive
+  * eg. ls alien1.pi?  or ls *.pig or ls alien1.* will show ALIEN1.PIG file
+
+
+* use this instead of sudo netstat -pantu
+  \ $ sudo netstat -pantuvelc
+
+
+* extra params to cd are ignored
+  \ eg. cd ksalda 1 23
+  \ bash: cd: ksalda: No such file or directory
+  \ cd 1 2 3
+  \ worked, cd-ed in dir 1
+
+* need a way to prevent kernel from ever panic-ing and thus leaving me without the reason why it panic'd (in dmesg, since i can't use sysrq+s to sync while panic'd) - SO, disabled kernel panics!!
+
+* dnscrypt-proxy with unbound, instead of normal DNS queries!
+
+* use mitmproxy and genymotion  for snapchat app, in order to respect snapchat devs' wishes for not using 3rd party software  and still do what I want - have my cake and eat it too :)
+  \ https://github.com/mitmproxy/mitmproxy/tree/master/examples
+  * make two of each:
+    * genymotion vm(nexus ... which?)
+      * install google services
+      * get a google account
+        \ otherwise can't log into google services and as a consequence can't run snapchat, not to mention can't download snapchat without a google account(from google play store)
+        * if needed by any chance, I can get an app specific password, rather than using the gmail password(this should not be needed with this mitmproxy variant; only when using 3rd party programs like SnAPI-Chat on github)
+          \ https://support.google.com/mail/answer/1173270?hl=en
+          \ https://www.google.com/accounts/IssuedAuthSubTokens?hide_authsub=1
+      * run mitmdump on host, to capture traffic
+        \ see exactly how
+      * get snapchat app from google play store
+      * run snapchat
+        * make snapchat account
+        * add the other snapchat account as friends
+
+
+
+* enable KASAN
+  \ https://github.com/google/kasan/wiki
+  * need gcc 5 for inline kasan, but should enable it when we got gcc5
+  * enable outline kasan in kernel config (because we only got gcc 4.9.2)
+    * this won't work currently, it panics on boot! find a way to log the panics' texts! (on panic?)
+
+
+
+* modify sshd and ssh(client) to can auth using BOTH password and key(signature auth) so that first the pass is asked, then the key is used; if either fails, don't let it in; but if pass is ok, and if key fails then maybe give some other error(as to not alert whoever else is trying this, that a key was also tried and failed) like maybe say the pwd was wrong.
+  \ yeah can't really do this, because their ssh client(with debug on) will show that it's trying with a key too! unless!!! there's an error that the pwd was wrong so that their ssh client will try next thing(the key) - even if the pwd was right! SO, this can still work! heh
+
+
+
+
+* check out claws-mail.org as a thunderbird replacement
+
+* remove stuff from /etc/hosts  and find a way to deny all by default, and only allow those in a list...
+  * see some grsec options(maybe RBAC needed?) for the deny all outgoing...
+  * there's also that overriding of glibc 
+    \ /home/myuser/myproject/system/Z575/OSes/manjaro/filesystem_now/home/emacs/temporary_sandbox_play/c/outbound_firewall/fake_connect.c
+  * firewall?
+    * iptables
+      \ https://wiki.gentoo.org/wiki/Iptables#Installation
+      \ with ipset? https://forums.gentoo.org/viewtopic-t-863121.html
+      \ too much work!
+
+
+
+
+
+* report keepassx bug that trying to open a db that's not accessible(eg. u+rw where owner is root; and you are not root) will not show any errors but will just pretend you didn't do anything, or just like starting keepassx without params.
+
+* my mc patch(perhaps) is clashing with emerge
+  \ while in mc, execute:
+  \ emerge --info cairo  (for example)
+  \ output gets stuck at this:
+  \ bash: 7: Bad file descriptor
+  \ then I can C-c out
+  \
+  \ can also get:
+  \ bash: 8: Bad file descriptor
+  \ this apparently happens right at exit, before exit, and C-c shows:
+  \ bash: 8: Bad file descriptor
+  \ ^C
+  \ ====================================
+  \ Error in portage.process.run_exitfuncs
+  \ 
+  \   File "/usr/lib64/python3.4/site-packages/portage/process.py", line 164, in run_exitfuncs
+  \     func(*targs, **kargs)
+  \   File "/usr/lib64/python3.4/site-packages/_emerge/actions.py", line 3057, in emergeexit
+  \     xtermTitleReset()
+  \   File "/usr/lib64/python3.4/site-packages/portage/output.py", line 287, in xtermTitleReset
+  \     2: sys.__stderr__.fileno()
+  \   File "/usr/lib64/python3.4/site-packages/portage/process.py", line 363, in spawn
+  \     retval = os.waitpid(pid, 0)[1]
+  \   File "/usr/lib64/python3.4/site-packages/portage/__init__.py", line 338, in __call__
+  \     rval = self._func(*args, **kwargs)
+  \ ====================================
+  \ 
+  \ Error in atexit._run_exitfuncs:
+  \ Traceback (most recent call last):
+  \   File "/usr/lib64/python3.4/site-packages/portage/process.py", line 164, in run_exitfuncs
+  \     func(*targs, **kargs)
+  \   File "/usr/lib64/python3.4/site-packages/_emerge/actions.py", line 3057, in emergeexit
+  \     xtermTitleReset()
+  \   File "/usr/lib64/python3.4/site-packages/portage/output.py", line 287, in xtermTitleReset
+  \     2: sys.__stderr__.fileno()
+  \   File "/usr/lib64/python3.4/site-packages/portage/process.py", line 363, in spawn
+  \     retval = os.waitpid(pid, 0)[1]
+  \   File "/usr/lib64/python3.4/site-packages/portage/__init__.py", line 338, in __call__
+  \     rval = self._func(*args, **kwargs)
+  \ KeyboardInterrupt
+  * can reproduce this by having already emerge hexedit , then running
+    \ set -x ; time emerge --debug -nav hexedit ; set +x
+    \ the set x is optional
+    \ usually this will just exit quickly (because it's already emerged, and -n)
+    \...
+    \ this:
+    \ root     22215  0.0  0.0  12008  2520 pts/7    T+   11:26   0:00 bash -c __earlyec=("${PIPESTATUS[@]}"); pwd>&8;kill -STOP $$
+    \ is because of my:
+    \ export PROMPT_COMMAND='__earlyec=("${PIPESTATUS[@]}")'
+    \ in ~/.bashrc
+    \ but the pwd and kill -STOP is from within mc! my patch
+    \ this, in subshell.c 
+    \ " PROMPT_COMMAND=${PROMPT_COMMAND:+$PROMPT_COMMAND; }'pwd>&%d;kill -STOP $$'\n"
+    \ the %d is subshell_pipe[WRITE]
+    \ https://github.com/MidnightCommander/mc/blob/21060c8ea73df21f45f51492a688142a21473c91/src/subshell.c#L881
+    \ this isn't from my patch, but maybe what I changed affected this, let's see...
+    \ re-emerging without my patch, duration: 3m55s
+    \ ok now without my patch the same thing still happens!
+    \ ok it happens even when PROMPT_COMMAND is unset!
+    \ myuser 10869  0.0  0.0  12008  2484 pts/15   T+   11:41   0:00 bash -c pwd>&8;kill -STOP $$
+    * the funny thing is, that while I strace the emerge, if I C-c early, then mc executes the same command (with fd 8) and it doesn't fail; also the same emerge with 2>somefile  doesn't get the error
+      * emerge --pretend coreutils 2>/tmp/stderr
+        \ doesn't err and the file has 0 bytes! XXX: #workaround 2>/dev/null although this might be bad... if something says something to stderr
+      * emerge --pretend coreutils
+        \ errs
+      * emerge --pretend coreutils 1>/tmp/stderr
+        \ errs! on any number except 2
+      * gave up for now
+
+
+
+
+
+
+* consider setting this sysctl oom_kill_allocating_task to non-zero, as to avoid killing the running virtualbox!!
+  \ src: linux-git/Documentation/sysctl/vm.txt
+  \ /proc/sys/vm/oom_kill_allocating_task
+
+
+* fix agetty (or login) so there's no delay between entering username and being prompted for the password; delay which allows for chars to be echoed before the "Password:" prompt!
+  \ ffs
+
+
+* investigate kernel scrollback bug
+  \ when being switched to a vt (vc2) on second screen(eg. vim) then the first console vc1 being on first screen(not in vim, but on like bash command line) is losing scrollback that appeared while focus was on vc2
+  \ or maybe it's not supposed to scroll up if the vt isn't active? recheck that patch!
+  * see if scrollback only activates when the specific screen is selected! or even, when switched away FROM! 'cause that's bad too! 
+    \ need all vts to have scrollback even if they were never activated! so that vt10->vt12 where dmesg is spewed have all lines available for scrollback when I switch to them for the first time!
+
+* when you press Tab and it does NOTHING! (in make nconfig  on exit!)
+  \ right-arrow key works though
+
+* in gentoo bare metal, xscreensaver (Ctrl+Alt+L) locks but fails to unlock regardless of the password being good!
+  * disabled for now
+  * TODO: actually fix it!
+
+* fix X's priority or else keyboard lag when compiling; on gentoo bare metal
+  * temp fix for now:
+    \ kernel.grsecurity.chroot_restrict_nice=0
+    \ in /etc/sysctl.d/99-sysctl.conf
+
+
+* get urxvt in gentoo
+  \ vim /root/here/emacs/build/1packages/urxvt-git/PKGBUILD
+  \ vim /usr/portage/x11-terms/rxvt-unicode/rxvt-unicode-9.21.ebuild
+  \ https://devmanual.gentoo.org/ebuild-writing/
+  \ https://devmanual.gentoo.org/eclass-reference/index.html
+
+* change certpatrol(firefox addon; got git source code) so that it stores all seen certs for the domain, so when google keeps alternating, then I don't get notified!(I do, only on new ones!)
+
+* check that 59.996023, shouldn't it really be 60 exactly? I mean, isn't that why I'm getting that band at the top? consistently in the same place, even tho vsync is supposed to be on?!
+  \ /home/myuser/.config/xfce4/xfconf/xfce-perchannel-xml/displays.xml
+  \ does say 60.0 when viewed though.
+
+* see what (pulse?) did /.config/ folder and apparently still using it!
+  * see if it's made again (apparently wasn't remade since 30 sept.2015)
+
+
+* the boot time in gentoo is 37 sec, compared to like 12 sec in Manjaro
+  * use something other than genkernel!!!
+    \ which means: need to make my own scripts to make kernel, modules, append cpu microcode, mount and cp to /bewt/ , regen grub via grub2-mkconfig
+
+* get ssh (not sshd, which is already there) config file in /etc/ssh/ssh_config
+
+* see /etc/updatedb.conf if we wanna allow some paths or like sysfs
+
+* see why VirtualBox fails to start
+  \ VMSetError: Failed to reserve physical memory (0x1004 -> 0x1000; VMMDev Heap)
+  * look into Qemu/KVM
+    \ this article: https://www.proteansec.com/linux/running-virtualboxvmware-hardened-gentoo/
+    \ says that "In order to be able to boot virtualization software like VirtualBox/Vmware, we have to disable some PaX/Grsecurity options. Note that I didn't have any problems with all of the options enabled when using Qemu/KVM, which runs without any problems despite having all of the PaX/Grsecurity features mentioned below enabled."
+    \ https://wiki.gentoo.org/wiki/Comparison_of_virtual_machines
+    \ so ... I'd rather not use Virtualbox then.
+    * hmm maybe I don't need any virtual machine software anymore...
+      * look into using thunderbird on host instead!
+        * maybe keep datadir inside a tcplay container?
+
+
+* use google docs instead of libreoffice
+
+* ebuild writing
+  * https://devmanual.gentoo.org/ebuild-writing/
+  * https://devmanual.gentoo.org/eclass-reference/index.html
+
+* to read:
+  * https://wiki.gentoo.org/wiki/Bugzilla/Bug_report_guide#
+  * https://en.wikipedia.org/wiki/Essential_amino_acid#Essentiality_in_humans
+    \ Dried spirulina contains about 60% (51–71%) protein.[2][3] It is a complete protein containing all essential amino acids, though with reduced amounts of methionine, cysteine, and lysine when compared to the proteins of meat, eggs, and milk. It is, however, superior to typical plant protein, such as that from legumes.[2][4][5]
+    \ src: https://en.wikipedia.org/wiki/Spirulina_%28dietary_supplement%29
+    * histidine (hu: hisztidin)
+      \ https://en.wikipedia.org/wiki/Histidine
+      \ WARNING: Supplementation of histidine has been shown to cause rapid zinc excretion in rats with an excretion rate 3 to 6 times normal.
+      \ Histidine decarboxylase (HDC) is the enzyme that catalyzes the reaction that produces histamine from histidine with the help of vitamin B6
+      \ src: https://en.wikipedia.org/wiki/Histidine_decarboxylase
+      \ https://en.wikipedia.org/wiki/Histamine
+      \ Enzymes /ˈɛnzaɪmz/ are macromolecular biological catalysts. Enzymes accelerate, or catalyze, chemical reactions. The molecules at the beginning of the process are called substrates and the enzyme converts these into different molecules, called products. Almost all metabolic processes in the cell need enzymes in order to occur at rates fast enough to sustain life.
+      \ Enzymes are known to catalyze more than 5,000 biochemical reaction types.[2] Most enzymes are proteins, although a few are catalytic RNA molecules.
+      \ Like all catalysts, enzymes increase the rate of a reaction by lowering its activation energy. Some enzymes can make their conversion of substrate to product occur many millions of times faster. An extreme example is orotidine 5'-phosphate decarboxylase, which allows a reaction that would otherwise take millions of years to occur in milliseconds.[3][4] Chemically, enzymes are like any catalyst and are not consumed in chemical reactions, nor do they alter the equilibrium of a reaction.
+      \ Enzymes differ from most other catalysts by being much more specific. Enzyme activity can be affected by other molecules: inhibitors are molecules that decrease enzyme activity, and activators are molecules that increase activity. Many drugs and poisons are enzyme inhibitors. An enzyme's activity decreases markedly outside its optimal temperature and pH.
+      \ src: https://en.wikipedia.org/wiki/Enzyme
+    * isoleucine (hu: izoleucin)
+      \ Biotin(hu: biotin), sometimes referred to as Vitamin B7 or Vitamin H, is an absolute requirement for the full catabolism of isoleucine (as well as leucine)
+      \ src: https://en.wikipedia.org/wiki/Isoleucine#Catabolism
+      \ Biotin, also known as vitamin H or coenzyme R,[2] is a water-soluble B-vitamin (vitamin B7).
+      \ src: https://en.wikipedia.org/wiki/Biotin
+      \ Biotin is a coenzyme for carboxylase enzymes, involved in the synthesis of fatty acids, isoleucine, and valine, and in gluconeogenesis.
+      \ biotin is essential for amino acid catabolism, gluconeogenesis, and fatty acid metabolism.
+      \ Biotin is also necessary for gene stability because it is covalently attached to histones.
+      \ src: https://en.wikipedia.org/wiki/Biotin_deficiency
+    * leucine (hu: leucin)
+      \ https://en.wikipedia.org/wiki/Leucine
+    * lysine (hu: lizin)
+      \ https://en.wikipedia.org/wiki/Lysine
+    * methionine (hu: metionin)
+      \ https://en.wikipedia.org/wiki/Methionine
+    * phenylalanine (hu: fenilalanin)
+      \ https://en.wikipedia.org/wiki/Phenylalanine
+    * threonine (hu: treonin  maybe)
+      \ https://en.wikipedia.org/wiki/Threonine
+    * tryptophan (hu: triptofán)
+      \ https://en.wikipedia.org/wiki/Tryptophan
+    * valine (hu: valin)
+      \ https://en.wikipedia.org/wiki/Valine
+      \ Human dietary sources are any proteinaceous foods such as meats, dairy products, soy products, beans and legumes.
+      \ Valine is an essential amino acid, hence it must be ingested, usually as a component of proteins.
+      \ 
+  * Nutrients You Need And The Raw Foods That Have Them
+    \ http://www.incrediblesmoothies.com/raw-food-diet/raw-nutrition/nutrients-you-need-and-the-raw-foods-that-have-them/
+  * check out that MMS thing
+    \ http://www.sagevid.se/mms/english/mms-details.html
+
+* make kpEnter work in less while searching via /
+  \ that .less file maybe can add this feat, or in .inputrc?
+
+* xfce4-sensors is spamming the log like crazy
+  \ this: /usr/lib64/xfce4/panel-plugins/xfce4-sensors-plugin
+  \ which gets respawned(if killed) until you do: pkill xfce4-sensors and get a desktop notification that to restart it!
+  \ workaround: keep refresh at 60 sec (instead of 5)
+  \ relavant spam code: vim /usr/src/linux-4.2.3-hardened-r5/drivers/acpi/ec.c +676
+  \ like:
+  \ [202502.953646] ACPI : EC: 2: Increase command
+  \ [202502.953653] ACPI : EC: ***** Command(RD_EC) started *****
+  \ [202502.953656] ACPI : EC: ===== TASK (3) =====
+  \ [202502.953712] ACPI : EC: EC_SC(R) = 0x00 SCI_EVT=0 BURST=0 CMD=0 IBF=0 OBF=0
+  \ [202502.953714] ACPI : EC: EC_SC(W) = 0x80
+  \ [202502.954426] ACPI : EC: ===== IRQ (3) =====
+  \ [202502.954434] ACPI : EC: EC_SC(R) = 0x08 SCI_EVT=0 BURST=0 CMD=1 IBF=0 OBF=0
+  \ [202502.954436] ACPI : EC: EC_DATA(W) = 0x92
+  \ [202502.955521] ACPI : EC: ===== IRQ (3) =====
+  \ [202502.955529] ACPI : EC: EC_SC(R) = 0x01 SCI_EVT=0 BURST=0 CMD=0 IBF=0 OBF=1
+  \ [202502.955533] ACPI : EC: EC_DATA(R) = 0x00
+  \ [202502.955561] ACPI : EC: ***** Command(RD_EC) stopped *****
+  \ [202502.955563] ACPI : EC: 1: Decrease command
+  \ [202502.955805] ACPI : EC: 2: Increase command
+  \ [202502.955806] ACPI : EC: ***** Command(RD_EC) started *****
+  \ [202502.955808] ACPI : EC: ===== TASK (3) =====
+  \ [202502.955860] ACPI : EC: EC_SC(R) = 0x00 SCI_EVT=0 BURST=0 CMD=0 IBF=0 OBF=0
+  \ [202502.955861] ACPI : EC: EC_SC(W) = 0x80
+  \ [202502.956649] ACPI : EC: ===== IRQ (3) =====
+  \ [202502.956656] ACPI : EC: EC_SC(R) = 0x08 SCI_EVT=0 BURST=0 CMD=1 IBF=0 OBF=0
+  \ [202502.956657] ACPI : EC: EC_DATA(W) = 0x92
+  \ [202502.957395] ACPI : EC: ===== TASK (3) =====
+  \ [202502.957449] ACPI : EC: EC_SC(R) = 0x02 SCI_EVT=0 BURST=0 CMD=0 IBF=1 OBF=0
+  \ [202502.958000] ACPI : EC: ===== IRQ (3) =====
+  \ [202502.958007] ACPI : EC: EC_SC(R) = 0x01 SCI_EVT=0 BURST=0 CMD=0 IBF=0 OBF=1
+  \ [202502.958010] ACPI : EC: EC_DATA(R) = 0x00
+  \ [202502.958025] ACPI : EC: ***** Command(RD_EC) stopped *****
+  \ [202502.958027] ACPI : EC: 1: Decrease command
+
+* kpHome/kpEnd not working on console (not inside X) while in vim, they insert new char(s)
+
+* unset var in syntactic
+  \ https://github.com/scrooloose/syntastic/wiki/Syntax-Checker-Guide#checkeranatomy
+  \  let env = { 'RUBYOPT': '' }
+  \  return SyntasticMake({ 'makeprg': makeprg, 'errorformat': errorformat, 'env': env })
+	\ How do you unset the var RUBYOPT, for example. I don't think it's currently possible. But don't really want to open an issue!
+
+
+* uMatrix loses current site scope when opening links in new Windows
+  \ https://github.com/gorhill/uMatrix/issues/395#issuecomment-155415349
+
+* rustbook
+  * find out if cargo has a debug mode (arg?), or how do those debug! macros work?
+    \ cargo is in debug mode unless passing --release
+    \ unsure about debug! macros yet!
+  * read from 5: https://doc.rust-lang.org/nightly/book/syntax-and-semantics.html
+    \ currently next: https://doc.rust-lang.org/nightly/book/enums.html
+  * then read from 4: https://doc.rust-lang.org/nightly/book/learn-rust.html
+  * then read 6: https://doc.rust-lang.org/nightly/book/nightly-rust.html
+  * read: https://doc.rust-lang.org/nightly/std/fmt/
+  * check this: https://nbaksalyar.github.io/2015/11/09/rust-in-detail-2.html
+  - this was done once, but since ported to .rs it's not implemented anymore//this https://play.rust-lang.org needs to have a way to set RUST_BACKTRACE
+    \ eg. https://play.rust-lang.org/?code=fn%20main%28%29%20{%0A%20%20%20%20fn%20diverges%28%29%20-%3E%20!%20{%0A%20%20%20%20%20%20%20panic!%28%22This%20function%20never%20returns!%22%29%3B%0A%20%20%20%20}%0A%20%20%20%20let%20x%3A%20i32%20%3D%20diverges%28%29%3B%0A%20%20%20%20let%20x%3A%20String%20%3D%20diverges%28%29%3B%0A%20%20%20%20%0A}%0A&version=nightly 
+    \ see: https://github.com/rust-lang/rust-playpen/issues/119
+    \
+    \ see this line: https://github.com/rust-lang/rust-playpen/blob/master/web.py#L115
+    \ unsure how to add an environment there, at this time. or maybe just in that compile.sh script!
+  - nevermind this//find a way to make copy/pasting work in rust-playpen without `dom.event.clipboardevents.enabled` having to be true  see: https://github.com/rust-lang/rust-playpen/issues/69
+  * autoformat rust code on filesave (get rustfmt command and see this rust.vim PR)
+    \ https://github.com/rust-lang/rust.vim/pull/49/files
+    * see who has rustfmt ?
+    * get that PR locally, on ./upd
+      \ dno what I meant by upd
+      \ this PR: https://github.com/rust-lang/rust.vim/pull/49/files
+  * read: https://ricardomartins.cc/2016/06/08/interior-mutability
+
+
+* this is why I can't see the tooltip when volume up/down happens
+  \ WARNING **: Binding 'XF86AudioRaiseVolume' failed!
+  \ Failed to bind XF86AudioRaiseVolume
+  \ ** (xfce4-volumed-pulse:9291): WARNING **: Binding 'XF86AudioRaiseVolume' failed!
+  \ see: less /tmp/.xinitrc.log
+
+* find a way to have compression=no in fstab! not only on remount! since apparently with that in fstab it defaults to not having that option which means it's: zlib
+
+* sys-auth/polkit-0.113-r1 should depend on dev-util/gtk-doc or else it will fail to emerge because missing command: gtkdoc-scan
+
+
+* see why, when emerging new kernel(git-sources), and user patches are applied, the /etc/portage/bashrc script detects it as * NO USER PATCHES (re)APPLIED!!!
+  \ maybe something related to exit code of calling epatch_user (which is actually not called by bashrc script in this case!)
+
+
+* use Vulkan with Rust, as opposed to opengl
+  \ https://www.khronos.org/vulkan/
+
+
+* for 7*.wofl
+  * set root password!
+  * fix fstab
+  * install colordiff soon after chroot!
+  * add user to vboxusers!
+    \ ignore tpe_group
+  * what does 'x' mean in gshadow
+    \ sshd:x::
+    \ changed from '!'
+    \ If the password field contains some string that is not a valid
+		\ result of crypt(3), for instance ! or *, users will not be able to
+		\ use a unix password to access the group (but group members do not
+		\ need the password).
+	* rediff /etc after all updates are done!
+    \ /mnt/gentoo # colordiff -rup -- /etc/ ./etc/|less
+		* see which of those 'Only in' i need to copy over
+      \ /mnt/gentoo # colordiff -rup -- /etc/ ./etc/|grep 'Only in ' |LC_ALL=C sort -k3 -d |less
+  * get latest unstable gcc !
+
+
+
+* hmm, google drive offline...
+  \ http://www.howtogeek.com/227032/how-to-use-google-drive-offline-on-a-deskop-or-mobile-device/#
+  \ erm: There is no Drive app for Linux at this time. Please use Drive on the web and on your mobile devices.
+  \ src: https://www.google.com/drive/download/
+
+* read android stuff from the beginning
+  \ https://developer.android.com/design/index.html
+
+
+* if I ever make an app... ensure it's free and no-ads(ad-free) - trust me, it's what I'd want if I were the client! and it's in tune with who/what I really am, this way!
+  \ app for android/iphone that is.
+
+
+* read this rust, for learning purposes:
+  \ https://github.com/btbytes/prlink/blob/master/src/main.rs
+
+* get Atom editor?
+  \ see the comments for this video for addons https://www.youtube.com/watch?v=Yu2p9-n4aaA
+  \ atom: https://github.com/atom/atom/blob/master/docs/build-instructions/linux.md
+  \ vim: https://atom.io/packages/vim-mode  AND https://atom.io/packages/ex-mode
+  * build issues:
+    * timeout during script/build
+      \ Request for package information failed: atom.io is temporarily unavailable, please try again later.
+
+* Syntactic of rust.vim isn't working in neovim (cmd: nvim)
+  \ but syntax is!(because doesn't require Syntactic)
+
+* look into this:
+  \ https://keybase.io/
+
+
+* get these two:
+  * https://github.com/junegunn/fzf
+  * https://github.com/sorin-ionescu/prezto
+
+* emacs
+  - find out emacs's dot file
+    \ ~/.emacs
+  * rebind <Delete> to delete-forward-char
+  * FIXME: pressing M-q to auto-fill (in M-x auto-fill-mode) twice, should detect no changes and not make a new undo step (for when C-/ (or C-_) is pressed to undo)
+  * bind to keys: scroll-up-line and scroll-down-line to scroll in emacs like in less
+    * rebind to M-n and M-p but M-n(in major mode Info, not in Text) is bound to clone-buffer, something that duplicates the current window in a new one and focuses it; C-x 2 can be used for that though without the focus part.
+  * rebind C-M-shift-V to scroll down(text goes up) in the bottom window (whilst C-M-v scrolls up(text goes up)) bound to scroll-other-window so, apparently there wouldn't be an opposite scroll!
+  \ C-M-shift-v (C-M-V) does the same thing as C-M-v  - does emacs make any difference, in general?
+  * how to get into one recursive editing level
+    \ get out via: <ESC> <ESC> <ESC>
+  * bind to key toggle-truncate-lines
+    \ src: https://www.emacswiki.org/emacs/TruncateLines
+
+* read:
+  \ https://github.com/0xAX/linux-insides/blob/master/Booting/linux-bootstrap-1.md
+
+* emacs
+  * remember file position (like vim does), even after exit!
+    \ https://emacs-fu.blogspot.com/2009/05/remembering-your-position-in-file.html
+  * vim's # and * to search words!
+    \ see: https://www.emacswiki.org/emacs/SearchAtPoint
+
+
+* Lisp + Rust?
+  \ https://github.com/murarth/ketos
+
+* bitbucket+github+notabug for git hosting!
+  \ with twitter for logging commits/sha in history! (if twitter gets Edit, it's useless!, unless it can differentiate betweent edited and not edited tweets! eg. mouse over shows Edited)
+  \ maybe we can avoid using twitter and use archive.org/web instead! to archive the commits!
+  \ XXX: bitbucket issue required: https://bitbucket.org/site/master/issues/10983/ed25519-ssh-keys-bb-13645
+  \ also bitbucket redirects to id.atlasian.com as http causing too many redirects when I'm forcing it to https(eg. https, it tries to go http! or something like that!)
+  \ id.atlasian.com Cookies sent for 'Any kind of connection': atlassian.xsrf.token and JSESSIONID
+  \ atlasian.com Cookies sent for 'Any kind of connection':   __aid_user_id and __atl_path
+  \ bitbucket.org -//- project-history-YOURUSERNAMEHERE, recently-viewed-repos_YOURUSERNAMEHERE and blocking-ads
+
+
+* tlp in Manjaro again! (only for the laptops, I guess)
+  - on T400
+  * on Z575
+
+* replace ntpdate(script) with Chrony?
+  \ https://wiki.archlinux.org/index.php/Chrony
+
+* Unix Haters Handbook (ugh.pdf)
+  * errata
+    * p 206 'inscrutible' should be 'inscrutable'
+
+- already done with psd //get chromium to not write to disk, ie. temporarily copy shiet to tmpfs and the back to disk on exit, or something! because this is ridiculous! the amount of writes is way too many (even with cache in /tmp already)
+
+* colorgcc and ccache
+  \ https://wiki.archlinux.org/index.php/Ccache
+
+* entered Manjaro
+  \ aka replaced Gentoo
+
+
+* NMI?
+  \ [    0.202020] NMI watchdog: enabled on all CPUs, permanently consumes one hw-PMU counter.
+  \ tlp doesn't disable this(or at least dmesg doesn't say it did) even with NMI_WATCHDOG=0
+  * disable this in nconfig?
+
+* get rid of LVM
+  * remove leftover LUKS partitions first!
+
+
+* fix scp-ed 1packages/* symlinks! by looking at source(on T400)
+  \ next time zip them before scp from-ing
+
+* undo --disable-gpu for chromium and see if it still locks up system after a while!
+
+
+* firefox-hg
+  * maybe add this dnssec stuff
+    \ https://www.dnssec-tools.org/wiki/index.php/Firefox
+
+
+* vlc: find out what's up with this:
+  \ [0000559dc73522e8] qt interface error: Unable to load extensions module
+
+* fix this? aka how to add ClockPM? and enable aspm in /etc/default/grub again
+  \ [    2.089628] acpi PNP0A08:00: _OSC: OS supports [ExtendedConfig Segments MSI]
+  \ [    2.096773] acpi PNP0A08:00: _OSC: not requesting OS control; OS requires [ExtendedConfig ASPM ClockPM MSI]
+  * also undo cmdline:
+    \ it currently has:
+    \ pcie_aspm=off radeon.aspm=0
+  * ok maybe don't do this because of the comments I wrote in /etc/default/grub
+
+
+* see if kernel/startx still works without this set:
+  \ CONFIG_DRM_FBDEV_EMULATION
+  \ doubtful! it will probably be black screen!
+  * disable CONFIG_VGACON_SOFT_SCROLLBACK since it's always fbdev!
+    \ and CONFIG_VGACON_REMEMBER_SCROLLBACK
+
+* try this set maybe? CONFIG_DRM_AMDGPU
+
+* make bash's time report time even if C-c
+  \ in execute_cmd.c
+  \ search: COMMAND_TIMING
+
+* rust.vim doesn't work anymore! investigate
+  \ :RustRun works
+  \ :RustFmt doesn't, does cat buffer, apparently!
+
+
+* for ssd writes, see: /var/lib/upower/*
+
+* when `rustup doc` and no docs are found(and no errors nor exit code != 0), suggest running: `rustup component add rust-docs`
+  - find rustup source on github
+    \ found: https://github.com/rust-lang-nursery/rustup.rs
+    - fix chromium tab from crashing when viewing anything github (even with empty profile, eg. chro --user-data-dir=/tmp )
+      \ Received signal 4 ILL_ILLOPN
+      * can't find existing issue on https://bugs.chromium.org/p/chromium/issues/
+        \ unless it's this? https://bugs.chromium.org/p/chromium/issues/detail?id=661015
+      - checking debugport while the issue occurrs
+        \ like here: https://bugs.chromium.org/p/chromium/issues/detail?id=661015&q=snap%20github.com&sort=-modified&colspec=ID%20Pri%20M%20Stars%20ReleaseBlock%20Component%20Status%20Owner%20Summary%20OS%20Modified
+        \ failed with error 500 or 404 if using just host:port
+      - disabled all caches in chrome://flags/ but to no avail, aw snap still happens
+      * fixed ... but forgot issue number(I made a new one)
+    * use firefox to find rustup src on github
+      * it's here: https://github.com/rust-lang-nursery/rustup.rs
+  * also no errors nor exit code !=0 when no browser defined? since I've already installed the docs!
+    \ yeah hitting this now! it must be using xdg something to try to start it!
+
+
+* fix github.com pages crashing in chromium
+  \ https://bugs.chromium.org/p/chromium/issues/detail?id=683335#c12
+  \ last known good: -rw-r--r-- 1 z z 172605440 05.01.2017 04:08 chromium-dev-57.0.2972.0_r3655.0cc9f99274-1-x86_64.pkg.tar
+  \ first known bad: -rw-r--r-- 1 z z 176936960 30.01.2017 14:44 chromium-dev-58.0.2998.0_r9182.4f0acca4ba-1-x86_64.pkg.tar
+
+
+
+* transform BUG_ON in my kernel patches into something like printf&throw, then encase the main stuff into a catch and ignore it. Otherwise I won't be able to see the errors anyway!
+
+* in mc, make Suspend the default button on copy(F5) or move(F6) instead of Skip, else if Enter key somehow gets pessed twice, it will skip once(tho, it might show the incomplete file dialog?)
+
+* in my ~ home dir, find scripts in ~/bin that have /home/$USER and replace that with $HOME but check if $HOME is non-empty first
+  * double quotes needed on some, after replacing!
+
+* fix ~/.local/share/recently-used.xbel so that I don't have to rerun 1apply_local_changes_Z575 all the time to replace it with the /tmp symlink!
+  * make it an empty file with root owner and a-rwx
+
+* disable dns AAAA lookups
+  \ https://serverfault.com/questions/632665/how-to-disable-aaaa-lookups/633172#633172
+  \ can't within dnsmasq ? http://lists.thekelleys.org.uk/pipermail/dnsmasq-discuss/2015q1/009131.html
+
+
+* find perl regex for reading the current overclocking freqs
+  \ cat `cat "$HOME/build/1packages/kernel/linuxgit/PKGBUILD" |grep -v '^#'|grep '^3100_kernel_undervolting_'|head -1` | grep -A10 '^+const struct PStateInfo allpsi'|perl -n -e'/.*{\d+,.*\d+,.*(\d+),.*$/ && print "$1\n"'
+  \ ^ not good, yet
+  * workaround: using kernel 4.13 it seems they are reporting the true (o/c) frequencies, somehow. (not with 4.12)
+
+
+* bookmarks:
+  * https://github.com/asciimoo/searx
+    \ star this  and see searx.me
+    * https://github.com/asciimoo/searx/issues/1100#issuecomment-354879360
+      \ he's correct - preferences from url are dropped when doing anything after the first search! sad
+  * https://github.com/paulej/AESCrypt
+    \ star this
+  * https://www.privacytools.io/
+    \ some info
+  * https://github.com/Lyndir/MasterPassword
+    \ star this, but never use it - weak passwords + what happens when you wanna change one?(they prolly have a way for the latter)
+    * major issue: https://github.com/Lyndir/MasterPassword/issues/232
+  * https://github.com/Synzvato/decentraleyes
+    \ star this, but fails on some sites (forgot which one)
+  * https://github.com/duplicati/duplicati
+    \ star this, java-based backup tool (is it java-based? or was it only cryptomator which was java-based!)
+  * BEST: https://github.com/gilbertchen/duplicacy
+    \ a better than duplicati(in my superficial opinion) backup tool - written in go
+    * I conclude that chunk size 1M is best!
+      \ eg. duplicacy init -encrypt -iterations 65536 -chunk-size 1M -storage-name wtwstoragename snapshotid /tmp/storageURLordir
+      \ 
+  * https://github.com/restic/restic
+    \ was considered but https://github.com/gilbertchen/duplicacy#comparison-with-other-backup-tools
+  * https://github.com/cryptomator/cryptomator
+    \ star this
+    \ Multi-platform transparent client-side encryption of your files in the cloud
+  * https://github.com/Tarsnap/tarsnap
+    \ star this
+    \ Tarsnap is a secure, efficient online backup service
+    * missing .asc extension thus key not checked! however that key is expired anyway(it's the 2017 key) so the check would fail// actually nevermind, it was a typo in the downloaded .asc which was for a prev. version!
+      \ https://git.archlinux.org/svntogit/community.git/tree/trunk/PKGBUILD?h=packages/tarsnap#n14
+      \ introduced in https://git.archlinux.org/svntogit/community.git/commit/trunk/PKGBUILD?h=packages/tarsnap&id=c4e9f69bc140c2f75b6905f9ad695ba48dd66c21
+      \ fix(in general): ${HOME}/build/1packages/pacman/1pacman-git/allow_nondetached_asc_signatures_like_for_tarsnap.patch
+  * https://rocketgit.com/
+    \ add this to the git mirrors? hosted in DE/RO tho
+  * user.js
+    * https://github.com/ghacksuserjs/ghacks-user.js/blob/master/user.js
+
+* some new bugs only:
+  * vlc-git
+    * ${HOME}/build/1packages/vlc-git/fix_seek_simpler.patch
+    * ${HOME}/build/1packages/vlc-git/fixme_odd_demux_assert_hit.patch
+  - procps-ng
+    * ${HOME}/build/1packages/procps-ng/791cb72d32dd963a76fccc4b46facd906a4381fb.patch
+      \ pgrep failing to find pid... fixed by #91 in 3.3.14 https://gitlab.com/procps-ng/procps/commits/v3.3.14  which archlinux already released
+      \ https://git.archlinux.org/svntogit/packages.git/log/trunk?h=packages/procps-ng
+  * systemd
+    * ${HOME}/build/1packages/systemd/nofail_remount_ro_with_lazytime.patch
+    * ${HOME}/build/1packages/systemd/test_lazytime.patch
+  * coreutils
+    * ${HOME}/build/1packages/coreutils/strip_0x0D_at_end_of_file.patch
+  - tell PR owner that 'this' is nil here: ${HOME}/build/1packages/keepassx-git/103.patch
+    \ done
+
+* suggest fix
+  * https://git.archlinux.org/svntogit/packages.git/log/trunk?h=packages/rsync
+    \ tell someone to apply this patch https://attachments.samba.org/attachment.cgi?id=14018
+
+* generic info:
+  * Error: symbol `__x86.get_pc_thunk.cx' is already defined
+    \ work around this by using a different optimization flag: if it were -Ofast (most likely) then use -O2 (or -O1, but -O0 might not work if you're trying to compile glibc)
+    \ ${HOME}/build/1packages/glibc/PKGBUILD
+    \ NOTE: the error is caused by adding one(or more) of: -fno-omit-frame-pointer -ftrack-macro-expansion=2 -ggdb -fvar-tracking-assignments
+    \ if you don't add those, then no need for -O2 , so -Ofast works well (for glibc, at least)  - this is based on my testing a version which compiled fine before adding those args, which then needed the -O2!
+
+
+* usb reverse tethering
+  * find out (and answer/comment) if `usb tethering`(which exists in both android 4.4.2 and 6) can be made to work like `usb internet` did in 4.4.2 (which doesn't exist in 6)
+    * https://stackoverflow.com/questions/26081519/usb-internet-option-unavailable-kitkat-reverse-tethering/28315772#28315772
+    - https://gist.github.com/gohilbhagirath90/b1cac45178eb33f4e95d
+    - https://android.stackexchange.com/questions/195590/enable-usb-internet-for-android-6-0
+    - https://android.stackexchange.com/questions/73168/how-to-use-pcs-internet-on-android-phone-through-usb-cable/119324#119324
+
+* Qubes halt VM by window, script
+  \ https://github.com/tasket/Qubes-scripts/blob/master/halt-vm-by-window
+
+* ping _gateway  actually pings the gateway (local) IP
+  \ ie. _gateway resolves to it! so could websites use this to find your local router IP, or rather, to access it?
+  \ underscore(aka "_") is not a valid char for hostnames!
+  \ made comment about it: https://bugzilla.mozilla.org/show_bug.cgi?id=354493#c198
+  \ for chromium: https://bugs.chromium.org/p/chromium/issues/detail?id=590714#c9
+  * https://github.com/systemd/systemd/blob/aff443013640ba783c89c9032ebd5a557f2fc11e/src/nss-myhostname/nss-myhostname.c#L68
+    \ note that the following work: "_gateway", "gateway", "_gateway." and "gateway."
+    \ "gateway" will only work (in addition to _gateway) only if systemd is compiled with -Dcompat-gateway-hostname=true
+    * _gateway was added in commit: https://github.com/systemd/systemd/commit/5248e7e1f11aba6859de0b28f0dd3778b22842f2
+  * tell uMatrix/uBlock Origin to always block 3rd party requests to _gateway ?
+
+* uBlock Origin incognito split is N/A for firefox
+  \ https://github.com/gorhill/uBlock/blob/23979c3197bb3fd853cac592aefee95ae1a56f5c/platform/webext/manifest.json#L67
+  \ https://developer.mozilla.org/en-US/Add-ons/WebExtensions/manifest.json/incognito
+  \ 1528518006465	addons.webextension.uBlock0@raymondhill.net	WARN	Loading extension 'uBlock0@raymondhill.net': Reading manifest: Error processing incognito: Invalid enumeration value "split"
+  \ 1528518006477	addons.webextension.uBlock0@raymondhill.net	WARN	Loading extension 'uBlock0@raymondhill.net': Reading manifest: Error processing storage: An unexpected property was found in the WebExtension manifest.
+
+* see what's with leftAlt+UpArrow (aka Meta+UpArrow) causing SIGWINCH
+  \ [ 9111.877386] systemd[1]: Received SIGWINCH.
+  \ [ 9111.885210] systemd[1]: Failed to enqueue kbrequest.target job: Unit kbrequest.target not found.
+  \ alt keycode 103 = KeyboardSignal
+  \ ^ in /usr/share/kbd/keymaps/i386/include/linux-keys-bare.inc
+  \ looks like SIGWINCH(aka kill -28, see kill -l) is for resizing events: http://www.midnight-commander.org/ticket/4019#comment:1 which links to commit https://github.com/MidnightCommander/mc/commit/37ffc024225fd2ef1016babf3cbbeabce4a32899
+
+
+--------
+try benchmarks and look at idle power  without tlp ie. disabled!
+(on i87k)
+--------
+Switch to cpuidle gov. menu and see cpu temps are at 28? instead of 32-33 with teo!
+(this was supposed to be done on i87k)
+I'm on 'menu' for a while now... on both comps.
+--------
+
+continue ./check from CONFIG_SUSPEND (when comparing z575 with i87k linuxgit .config)
+^ there are 80 more pages (of 48 rows each)
+--
+see which config options to add/keep for i87k:
+$ diffkconfigs /home/user/build/1packages/4used/kernel/linuxgit/config.x86_64.Z575 /home/user/build/1packages/4used/kernel/linuxgit/makepkg_pacman/linux-git/src/linux-git/.config|less
+at the same time check if Z575 has them: /home/user/build/1packages/4used/kernel/linuxgit/config.x86_64.Z575
+now $ diffkconfigs /home/user/build/1packages/4used/kernel/linuxgit/config.x86_64.Z575 /home/user/build/1packages/4used/kernel/linux-stable/makepkg_pacman/linux-stable/src/linux-stable/.config|less
+- remove the temp-set CONFIG_DMADEVICES_DEBUG
+- do we need those DMA engines? CONFIG_ALTERA_MSGDMA
+- temp-enabled (module) CONFIG_I2C_MULTI_INSTANTIATE i2c-multi-instantiate.
+See which kernel modules I'm missing (at least the 0rpm fan one!):
+$ cd /home/user/logs/ls
+logs/ls/ $ ./lsmodcmp
+
+
+
+
+
+--------
+
+test performance with mitigations=2 in /etc/default/grub
+ https://www.phoronix.com/scan.php?page=article&item=mds-zombieload-mit&num=10
+tested: rust is 2+2 minutes slower!
+
+--------
+maybe set CONFIG_DEBUG_DRIVER back to N
+--------
+
+dmesg:
+[15731.732940] [drm] Atomic update on pipe (A) took 131 us, max time under evasion is 100 us
+[16175.356977] [drm] Atomic update on pipe (A) took 116 us, max time under evasion is 100 us
+[17819.917004] [drm] Atomic update on pipe (A) took 152 us, max time under evasion is 100 us
+[18085.605080] [drm] Atomic update on pipe (A) took 184 us, max time under evasion is 100 us
+[18600.349055] [drm] Atomic update on pipe (A) took 169 us, max time under evasion is 100 us
+[18631.942074] [drm] Atomic update on pipe (A) took 199 us, max time under evasion is 100 us
+
+
+[25312.941175] [drm] Atomic update on pipe (A) took 158 us, max time under evasion is 100 us
+
+[    3.250414] systemd-vconsole-setup[492]: KD_FONT_OP_GET failed while trying to get the font metadata: Function not implemented
+[    3.250420] systemd-vconsole-setup[492]: Fonts will not be copied to remaining consoles
+
+[    1.938461] resource sanity check: requesting [mem 0xfdffe800-0xfe0007ff], which spans more than pnp 00:06 [mem 0xfdb00000-0xfdffffff]
+[    1.938702] caller pmc_core_probe+0x8b/0x2b5 mapping multiple BARs
+
+got another:
+[ 7950.142835] [drm] Atomic update on pipe (A) took 158 us, max time under evasion is 100 us
+^ with kernel 5.1.5-g835365932f0d
+--------
+$ dmesg --level err
+[    2.632966] pcieport 0000:00:1c.4: PCIe Bus Error: severity=Corrected, type=Physical Layer, (Receiver ID)
+[    2.633357] pcieport 0000:00:1c.4:   device [8086:a294] error status/mask=00000001/00002000
+[    2.633730] pcieport 0000:00:1c.4:    [ 0] RxErr   
+
+lspci:
+00:1c.4 PCI bridge: Intel Corporation 200 Series PCH PCI Express Root Port #5 (rev f0)
+
+TODO: update BIOS ... after making sure it's not trojaned.
+
+--------
+find out what is, in BIOS:
+CFG Lock
+MSR 0xE2[15], CFG Lock bit
+
+"The “CFG Lock” is a setting that is quite new in UEFI BIOS, or appears in some manufacturers. For example, I never encountered it on my Gigabyte GA-Z87N-WIFI BIOS settings, despite using this same CPU. Nevertheless, it seems critical and related to Haswell’s power management as nearly all UEFI BIOS versions seem to “lock MSR 0xE2”. Disabling it is crucial, especially for running OS X 10.10 (Yosemite) and booting stock kernel. What does this “locking” do? All I can find is that it locks cuurent C-State until the next reset occurrs. Beats me, but OS X doesn’t like it!"
+from: https://web.archive.org/web/20190609011254/https://mackonsti.wordpress.com/2016/02/05/setup-msi-z97i-ac-motherboard-os-x/
+--------
+todo: use https://github.com/uber-archive/image-diff or https://github.com/gemini-testing/looks-same or https://github.com/mapbox/pixelmatch
+to see if maybe asus screenshots use stegano stuff in to leak identifying info
+------
+
+make script to detect if files were touched, can see check the value after the dot is 0, but also see if it can be touch-ed more granularly by some .c commands instead of `touch` command:
+
+this was touched: rust/src/tools/rust-installer/src/tarballer.rs (both atime and mtime that is) hence their .000000000
+
+$ stat ./fabricate_neutering_try1.patch rust/src/tools/rust-installer/src/tarballer.rs
+  File: ./fabricate_neutering_try1.patch
+  Size: 1404      	Blocks: 8          IO Block: 4096   regular file
+Device: 15h/21d	Inode: 18828193    Links: 1
+Access: (0644/-rw-r--r--)  Uid: ( 1000/    user)   Gid: ( 1000/    user)
+Access: 2019-06-17 17:03:58.318927751 +0200
+Modify: 2019-06-17 17:03:58.318927751 +0200
+Change: 2019-06-17 17:03:58.324927751 +0200
+ Birth: 2019-06-17 17:03:58.318927751 +0200
+  File: rust/src/tools/rust-installer/src/tarballer.rs
+  Size: 6089      	Blocks: 16         IO Block: 4096   regular file
+Device: 15h/21d	Inode: 19174169    Links: 1
+Access: (0644/-rw-r--r--)  Uid: ( 1000/    user)   Gid: ( 1000/    user)
+Access: 2019-06-17 17:03:58.000000000 +0200
+Modify: 2019-06-17 17:03:58.000000000 +0200
+Change: 2019-06-17 21:45:45.921990525 +0200
+ Birth: 2019-06-17 21:45:45.916990526 +0200
+--------
+chromium
+$ cdc
+chrome/browser/media/router/discovery/dial/dial_service.cc
+kDialRequestAddress
+disable that somehow!
+
+chrome/browser/media/router/discovery/BUILD.gn
+dial/dial_service.cc
+
+/home/user/build/1packages/4used/chro2/chromium-dev/40_chromium-dev/makepkg_pacman/chromium-dev/src/chromium-76.0.3809.12
+$ grep -nrIFw dial_service.cc
+chrome/browser/media/router/discovery/BUILD.gn:37:    "dial/dial_service.cc",
+--------
+find out which of these are needed to get back that 0rpm fan in sensors:
+/home/user/build/1packages/4used/kernel/linux-stable/makepkg_pacman/linux-stable/src/linux-stable
+$ diffkconfigs /home/user/build/1packages/4used/kernel/linuxgit/makepkg_pacman/linux-git/src/linux-git/.config .config
+Comparing:
+--- '/home/user/build/1packages/4used/kernel/linuxgit/makepkg_pacman/linux-git/src/linux-git/.config'
++++ '.config'
+--- /dev/fd/63	2019-06-30 23:40:35.507996099 +0200
++++ /dev/fd/62	2019-06-30 23:40:35.507996099 +0200
++CONFIG_64BIT_TIME=y
+-CONFIG_842_COMPRESS=y
+-CONFIG_842_DECOMPRESS=y
+-CONFIG_ACPI_APEI_MEMORY_FAILURE=y
+-CONFIG_ACPI_DOCK=y
+-CONFIG_ACPI_HOTPLUG_MEMORY=y
+-CONFIG_ACPI_IPMI=m
+-CONFIG_ACPI_NFIT=m
+-CONFIG_ACPI_PROCESSOR_AGGREGATOR=m
++CONFIG_ACPI_PROCESSOR_AGGREGATOR=y
+-CONFIG_ACPI_TABLE_UPGRADE=y
+-CONFIG_ACPI_TAD=m
++CONFIG_ACPI_TAD=y
+-CONFIG_ACPI_VIDEO=m
++CONFIG_ACPI_VIDEO=y
+-CONFIG_ALTERA_STAPL=m
+-CONFIG_AQUANTIA_PHY=m
+-CONFIG_ARCH_ENABLE_MEMORY_HOTREMOVE=y
+-CONFIG_ARCH_HAS_HMM=y
+-CONFIG_AT803X_PHY=m
+-CONFIG_BALLOON_COMPACTION=y
+-CONFIG_BCM7XXX_PHY=m
+-CONFIG_BCM87XX_PHY=m
+-CONFIG_BCM_NET_PHYLIB=m
+-CONFIG_BROADCOM_PHY=m
+-CONFIG_CB710_CORE=m
+-CONFIG_CB710_DEBUG_ASSUMPTIONS=y
+-CONFIG_CICADA_PHY=m
+-CONFIG_CORTINA_PHY=m
+-CONFIG_CRYPTO_842=y
+-CONFIG_DAVICOM_PHY=m
+-CONFIG_DAX=y
++CONFIG_DEBUG_DRIVER=y
+-CONFIG_DEVICE_PRIVATE=y
+-CONFIG_DEVICE_PUBLIC=y
+-CONFIG_DEV_PAGEMAP_OPS=y
++CONFIG_DMADEVICES_DEBUG=y
+-CONFIG_DP83822_PHY=m
+-CONFIG_DP83848_PHY=m
+-CONFIG_DRM_I915_GVT_KVMGT=m
+-CONFIG_DRM_VBOXVIDEO=m
++CONFIG_FRONTSWAP=y
+-CONFIG_GCC_VERSION=80300
++CONFIG_GCC_VERSION=90100
+-CONFIG_HAVE_BOOTMEM_INFO_NODE=y
+-CONFIG_HAVE_KVM_CPU_RELAX_INTERCEPT=y
+-CONFIG_HAVE_KVM_EVENTFD=y
+-CONFIG_HAVE_KVM_IRQ_BYPASS=y
+-CONFIG_HAVE_KVM_IRQCHIP=y
+-CONFIG_HAVE_KVM_IRQFD=y
+-CONFIG_HAVE_KVM_IRQ_ROUTING=y
+-CONFIG_HAVE_KVM_MSI=y
+-CONFIG_HMM_MIRROR=y
+-CONFIG_HMM=y
+-CONFIG_HWPOISON_INJECT=m
+-CONFIG_HW_RANDOM_VIRTIO=y
++CONFIG_HW_RANDOM_VIRTIO=m
++CONFIG_I2C_MULTI_INSTANTIATE=m
+-CONFIG_ICPLUS_PHY=m
+-CONFIG_INTEL_HID_EVENT=m
+-CONFIG_INTEL_IPS=m
++CONFIG_INTEL_IPS=y
+-CONFIG_INTEL_MEI=m
+-CONFIG_INTEL_MEI_ME=m
+-CONFIG_INTEL_MEI_TXE=m
+-CONFIG_INTEL_MEI_WDT=m
+-CONFIG_INTEL_PMC_IPC=m
++CONFIG_INTEL_PMC_IPC=y
+-CONFIG_INTEL_PUNIT_IPC=m
+-CONFIG_INTEL_RST=m
+-CONFIG_INTEL_VBTN=m
+-CONFIG_KVM_ASYNC_PF=y
+-CONFIG_KVM_COMPAT=y
+-CONFIG_KVM_GENERIC_DIRTYLOG_READ_PROTECT=y
+-CONFIG_KVM_INTEL=m
+-CONFIG_KVM=m
+-CONFIG_KVM_MMIO=y
+-CONFIG_KVM_VFIO=y
+-CONFIG_LED_TRIGGER_PHY=y
+-CONFIG_LIBNVDIMM=m
+-CONFIG_LOCALVERSION="-ge93c9c99a629"
++CONFIG_LOCALVERSION="-gf0fae702de30"
+-CONFIG_LSI_ET1011C_PHY=m
+-CONFIG_MARVELL_10G_PHY=m
+-CONFIG_MARVELL_PHY=m
++CONFIG_MEMCG_SWAP_ENABLED=y
++CONFIG_MEMCG_SWAP=y
+-CONFIG_MEMORY_BALLOON=y
+-CONFIG_MEMORY_FAILURE=y
+-CONFIG_MEMORY_HOTPLUG_DEFAULT_ONLINE=y
+-CONFIG_MEMORY_HOTPLUG_SPARSE=y
+-CONFIG_MEMORY_HOTPLUG=y
+-CONFIG_MEMORY_HOTREMOVE=y
+-CONFIG_MICREL_PHY=m
+-CONFIG_MICROCHIP_PHY=m
+-CONFIG_MICROSEMI_PHY=m
+-CONFIG_MIGRATE_VMA_HELPER=y
+-CONFIG_NATIONAL_PHY=m
+-CONFIG_NVDIMM_KEYS=y
+-CONFIG_PAGE_POISONING_ZERO=y
+-CONFIG_PREEMPT_NOTIFIERS=y
+-CONFIG_QSEMI_PHY=m
+-CONFIG_RAS_CEC=y
+-CONFIG_REALTEK_PHY=y
+-CONFIG_RENESAS_PHY=m
+-CONFIG_SMSC_PHY=m
+-CONFIG_STE10XP=m
++CONFIG_SWAP=y
+-CONFIG_TERANETICS_PHY=m
++CONFIG_THP_SWAP=y
+-CONFIG_USER_RETURN_NOTIFIER=y
+-CONFIG_VBOXGUEST=m
+-CONFIG_VFIO_PCI_VGA=y
+-CONFIG_VGA_ARB_MAX_GPUS=16
+-CONFIG_VGA_ARB=y
+-CONFIG_VHOST=m
+-CONFIG_VHOST_NET=m
+-CONFIG_VIRT_DRIVERS=y
+-CONFIG_VIRTIO_BALLOON=m
+-CONFIG_VIRTIO_INPUT=m
+-CONFIG_VIRTIO_MENU=y
+-CONFIG_VIRTIO_MMIO=m
++CONFIG_VIRTIO=m
+-CONFIG_VIRTIO_PCI_LEGACY=y
+-CONFIG_VIRTIO_PCI=y
+-CONFIG_VIRTIO=y
+-CONFIG_VIRTUALIZATION=y
+-CONFIG_VITESSE_PHY=m
+-CONFIG_X86_PMEM_LEGACY_DEVICE=y
+-CONFIG_X86_PMEM_LEGACY=m
+-CONFIG_XILINX_GMII2RGMII=m
+-CONFIG_ZONE_DEVICE=y
++CONFIG_ZSWAP=y
+-------
+save the new/changes from gentoo into q1q
+-----
+get wayland?  not yet
+https://www.phoronix.com/scan.php?page=news_item&px=X.Org-Maintenance-Mode-Quickly
+maybe with xfwm4's weyland counterpart: https://www.phoronix.com/scan.php?page=news_item&px=Xfway-Xfce-Xfwm4-Compositor
+https://github.com/adlocode/xfway
+or weston, if not.
+--------
+can't recompile firefox until this is fixed:
+https://bugzilla.mozilla.org/show_bug.cgi?id=1561207
+i won't enable dbus :P, well I enabled it!
+remember to disable dbus ^^^^^ in mozconfig!
+-------
+see why 'less' is broken when doing case insensitive search with a word with one uppercase letter - not finding anything - but works when all letters are lowercase, regardless of how many times I do '-i' to toggle case sensitivity on/off in search!
+
+happens during the first diff in cdq && ./check
+which runs as root!
+
+and why aren't line numbers and progress present?!
+
+ok apparently it's due to 'sudo'
+$ sudo less /root/.extend.bashrc
+vs
+sudo bash
+less /root/.extend.bashrc
+
+completely different less status text colors and progress shows only for the latter!
+oh i see, it's because /root/.extend.bashrc doesn't load with sudo!
+but why wouldn't the export still be in effect from the caller user? like
+export LESS='-+X -R -+S -+F -+E -I -M --shift 5'
+export LESS_TERMCAP_mb=$'\E[01;31m'
+etc.
+
+this works:
+$ sudo -- bash -i -c "less /root/.extend.bashrc"
+because it loads /root/.extend.bashrc
+and -i is interactive
+hmm -l doesn't work the same at all! i guess it's seen as not interactive w/o -i
+
+ok but even so, why wouldn't '-i' inside 'less' toggle what it says it toggles: case sensitivity in search!
+
+------
+after fixed the above ^ 'less' thing!
+on Z575, do
+cdq
+./check
+-----
+
+make 'cp' 's Enter when asked to overwrite re-prompt instead of meaning 'n'
+--------
+
+`beep` is segfaulting in mpg123 on Z575 and I need to recompile with debugging the following packages:
+sdl
+mpg123
+alsa-lib
+---
+
+try one of these:
+video=SVIDEO-1:d
+video=VGA-1:1280x800
+from https://wiki.archlinux.org/index.php/Intel_graphics#Blank_screen_during_boot,_when_"Loading_modules"
+-------
+something's wrong with Xorg, or something else that uses it, because even without debug(ie. glibc, glib2) Xorg is still using a lot of CPU now, especially when switching windows (after alt+tab is released) (and it's not due to the half a sec patch on xfwm4), and also for that CPU graph plugin on the panel mainly! If I put it on 250ms it's using 96% CPU in idle! Also startx, at startup is slower than before!
+
+tried compton and/or openbox instead of xfwm4, no difference
+tried even earlier xorg/xfwm4/xfconf/nettle/xf86-video-ati no dice.
+maybe it's always been like that and I'm only noticing this now?!
+
+cpu usage is like 50% usually, but when not using xf86-video-ati(and radeon as device in conf.) then it's like 96%-100%
+
+-------
+deselected [ ] Testcase for the marking rodata read-only 
+-----
+keep linuxgit .config in sync with linux-stable .config
+the former is currently newer, on i87k at least
+------
+see if I can set lowest(350Mhz) freq for GPU, maybe via /etc/default/tlp
+# Set the min/max/turbo frequency for the Intel GPU.
+# Possible values depend on your hardware. For available frequencies see
+# the output of tlp-stat -g.
+# Default: <none>
+#INTEL_GPU_MIN_FREQ_ON_AC=0
+#INTEL_GPU_MIN_FREQ_ON_BAT=0
+#INTEL_GPU_MAX_FREQ_ON_AC=0
+#INTEL_GPU_MAX_FREQ_ON_BAT=0
+#INTEL_GPU_BOOST_FREQ_ON_AC=0
+#INTEL_GPU_BOOST_FREQ_ON_BAT=0
+#/sys/class/drm/card0/gt_min_freq_mhz         =   350 [MHz]
+#/sys/class/drm/card0/gt_max_freq_mhz         =  1200 [MHz]
+#/sys/class/drm/card0/gt_boost_freq_mhz       =  1200 [MHz]
+#/sys/kernel/debug/dri/0/i915_ring_freq_table: 350 400 450 500 550 600 650 700 750 800 850 900 950 1000 1050 1100 1150 1200 [MHz]
+----------
+fix the 'vol' script issue
+https://gitlab.freedesktop.org/pulseaudio/pulseaudio/issues/705
+-----
+Ctrl+P aka Print Preview in my compiled chromium coredumps! or going to chrome://print/ same thing!
+local/chromium-dev 76.0.3809.12-1
+__throw_logic_error "basic_string::_M_construct null not valid"
+this is with gcc 9.1.0
+told on #chromium freenode that the stacktrace is:
+https://gist.github.com/howaboutsynergy/9f62361953545078d9a34194667db98c
+-------
+in the vim from gvim (because it's needed in order to be able to paste from MMB clipboard via "*p - thanks lopid and romainl #vim freenode)
+:h clipboard
+:h registers
+read for knowhow/info
+-------
+to add on i87k:
+https://bugzilla.mozilla.org/show_bug.cgi?id=1492909
+//crashed multiple times on youtube, on Z575  fixed by https://bugzilla.mozilla.org/show_bug.cgi?id=1582222
+local/firefox-hg r482527+.0b014ee5cd51+-1 (builtbydaddy)
+https://github.com/actix/examples/tree/master/simple-auth-server/src
+https://internals.rust-lang.org/t/more-love-for-rust-pattern-matching-please/5788/12
+https://github.com/sfackler/rust-native-tls
+-----
+le9e.patch stuff
+<morf> maybe that overcommit memory and ratio would help?
+sysrq to trigger oom-killer
+--------
+bugzilla bug on kernel bugzilla
+https://bugzilla.mozilla.org/show_bug.cgi?id=1557932
+it only b0rks comments when javascript(scripts)+cookies are allowed.
+--------
+constant disk reading emulation, but without any freezing(that would happen if `Active(file):` would actually be completely drained.
+5MiB/sec:
+$ sudo watch -n1 -d -- echo 7 \| tee /proc/sys/vm/drop_caches
+25MiB/sec:
+$ sudo watch -n.1 -d -- echo 7 \| tee /proc/sys/vm/drop_caches
+
+watch in another terminal:
+$ watch -n.1 -d cat /proc/meminfo
+$ sudo iotop -d 5 -o -b
+
+thread: https://gist.github.com/constantoverride/84eba764f487049ed642eb2111a20830
+
+TODO: remember to use sysrq memory-full-oom-kill(f) (aka sysrq+f) whenever system freeze is encountered!
+---------
+-------
+/home/user/build/2nonpkgs/rust.stuff/rust
+apparently compiling rust doesn't install rustfmt(anymore?) so I have to manually do it afterwards /home/user/build/2nonpkgs/rust.stuff/\!unused/rustfmt
+
+compiling rust also builds cargo/cargo(bin) even tho it's not in config.toml tools=[]
+------
+
+see if searching does a copy of the found selection with normal vte3 unpatched!
+and with vte3 archlinux upstream!
+all require recompilation of xfce4-terminal!
+
+happens in upstream vte3 which is commit 1867af10ea314dc3ab4fb7f7093a8882a2fd3f77
+aka
+_commit=14fac9f56d923cbb23b0c114ddf630fe36c5163c  # tags/0.56.3^0
+in PKGBUILD
+https://gitlab.gnome.org/GNOME/vte/issues/156
+--------
+---
+
+mc SYSCALL_CANCEL stuckkage: https://gist.github.com/howaboutsynergy/70b6a98c225ffeeef9036ff33d1bfc20
+during `cd sftp://127.0.0.1` (after entered correct password) because /etc/ssh/sshd_config had a setting pointing to inexisting file: `Subsystem sftp /usr/lib/openssh/sftp-server`  instead of one that works because file exists and is executable: `Subsystem sftp /usr/lib/ssh/sftp-server`
+-----
+------
+maybe look into reporting a kernel bug about needing vm.dirty_writeback_centisecs=0
+(done in /etc/sysctl.d/10_delay_writes.conf )
+or else periodic sync-like freezes would deny starve anything else until it finishes flushing!
+I sort of mentioned it in next (not-yet-aproved)comment of https://www.phoronix.com/forums/forum/phoronix/latest-phoronix-articles/1114840-io_uring-gets-a-huge-performance-fix-up-to-755x-improvement#post1114842
+(but without any details as to why)
+--------
+
+find out which bash completion code is responsible for failing to expand this:
+/home/user/q1q 
+$ v OSes/archlinux/etc/fstab.hostspecific=
+if you press Tab there, you get:
+$ v OSes/archlinux/etc/fstab.hostspecific=OSes/archlinux/etc/fstab.hostspecific\=
+instead of:
+$ v OSes/archlinux/etc/fstab.hostspecific\=
+fstab.hostspecific=i87k  fstab.hostspecific=Z575  
+-----
+todo: I should install jre on Z575 too, else I'll keep adding
+/etc/profile.d/jre.csh and /etc/profile.d/jre.sh with each i87k commit
+happening after the Z575 one.
+-------
+I temp-used: $ sudo sysctl -w vm.block_dump=1
+to see whether disk writes to /dev/mmcblk0 are not sequential, but they are!
+dmesg |grep mmcblk0 > /tmp/a
+cat /tmp/a|cut -f3 -d':' > /tmp/b
+cat /tmp/a|cut -f3 -d':' |sort -k 3 -n > /tmp/c
+colordiff -up /tmp/{b,c}|less
+(nothing)
+
+iotop looks like:
+Total DISK READ :       0.00 B/s | Total DISK WRITE :       4.53 M/s
+Actual DISK READ:       0.00 B/s | Actual DISK WRITE:       4.44 M/s
+  TID  PRIO  USER     DISK READ  DISK WRITE  SWAPIN     IO>    COMMAND          
+30255 be/4 user        0.00 B/s    0.00 B/s  0.00 % 99.99 % sync
+ 5228 be/4 root        0.00 B/s    0.00 B/s  0.00 % 99.99 % [kworker/~ush-179:0]
+28018 be/4 root        0.00 B/s    3.39 M/s  0.00 % 98.69 % dd if=/de~lk0 bs=11M
+
+so the question is, why the disk writes initially full speed at about 9MiB/sec (seen via Disk Performance Monitor (xfce4-panel plugin) but then later are just 2.99MiB/sec constantly and sometimes spikes to 3.99 ?!
+What causes this slowdown? 
+
+it was already slowed down during these(and the avg was going down):
+5501878272 bytes (5.5 GB, 5.1 GiB) copied, 788.645 s, 7.0 MB/s
+11707351040 bytes (12 GB, 11 GiB) copied, 2743.76 s, 4.3 MB/s
+1382+0 records in
+1381+0 records out
+15931539456 bytes (16 GB, 15 GiB) copied, 4672.73 s, 3.4 MB/s
+
+real  77m53.492s
+user  0m0.023s
+sys 0m27.792s
+
+try disabling either of(or both):
+CONFIG_BLK_WBT_MQ
+CONFIG_BLK_WBT
+^ idea from https://bugzilla.kernel.org/show_bug.cgi?id=92571#c2
+
+trying both disabled:
+no effect! sometimes after C-c attempt, it even went down to 1MiB constant!
+Ok then, restored CONFIG_BLK_WBT  CONFIG_BLK_WBT_MQ
+
+so apparently this slowdown happens instantly after 2GiB are written(in memory buffer aka cached) - todo: retest this
+-------
+simplify rsank and make each hostname backup in its own dir, regardless of the-now duplication issues
+
+-----
+change gpg signatures for git commits!
+actually get a main key, then use that to sign the new key used for signs
+OR, get a key that last like 10 years
+------
+zombie 'make' processes again, when compiling firefox on Z575(now)
+actually I don't think they ever went away, it's just that they happen only sometimes!
+
+user     19038  0.0  0.0      0     0 pts/3    Z+   06:58   0:00 [make] <defunct>
+user     19644  0.0  0.0      0     0 pts/3    Z+   06:58   0:00 [make] <defunct>
+user     19654  0.0  0.0      0     0 pts/3    Z+   06:58   0:00 [make] <defunct>
+user     19655  0.0  0.0      0     0 pts/3    Z+   06:58   0:00 [make] <defunct>
+user     19657  0.0  0.0      0     0 pts/3    Z+   06:58   0:00 [make] <defunct>
+user     19661  0.0  0.0      0     0 pts/3    Z+   06:58   0:00 [make] <defunct>
+
+--
+ 3:43.31 make[4]: Leaving directory '/home/user/build/1packages/4used/firefox-hg/makepkg_pacman/firefox-hg/src/firefox-hg/obj-x86_64-pc-linux-gnu/layout/base'
+TIER: pre-export export compile misc libs tools
+--
+
+[Z575 19038]# grep -nrH . -- *
+grep: attr/current: Invalid argument
+grep: attr/prev: Invalid argument
+grep: attr/exec: Invalid argument
+grep: attr/fscreate: Invalid argument
+grep: attr/keycreate: Invalid argument
+grep: attr/sockcreate: Invalid argument
+autogroup:1:/autogroup-53 nice 0
+cgroup:1:10:memory:/
+cgroup:2:9:cpuset:/
+cgroup:3:8:blkio:/
+cgroup:4:7:net_cls:/
+cgroup:5:6:freezer:/
+cgroup:6:5:devices:/
+cgroup:7:4:cpu,cpuacct:/
+cgroup:8:3:pids:/
+cgroup:9:2:hugetlb:/
+cgroup:10:1:name=systemd:/
+cgroup:11:0::/user.slice/user-1000.slice/session-c1.scope
+grep: clear_refs: Invalid argument
+comm:1:make
+cpuset:1:/
+grep: cwd: No such file or directory
+grep: exe: No such file or directory
+gid_map:1:         0          0 4294967295
+io:1:rchar: 8120597
+io:2:wchar: 3523
+io:3:syscr: 7714
+io:4:syscw: 773
+io:5:read_bytes: 0
+io:6:write_bytes: 0
+io:7:cancelled_write_bytes: 0
+limits:1:Limit                     Soft Limit           Hard Limit           Units     
+limits:2:Max cpu time              unlimited            unlimited            seconds   
+limits:3:Max file size             unlimited            unlimited            bytes     
+limits:4:Max data size             unlimited            unlimited            bytes     
+limits:5:Max stack size            unlimited            unlimited            bytes     
+limits:6:Max core file size        unlimited            unlimited            bytes     
+limits:7:Max resident set          unlimited            unlimited            bytes     
+limits:8:Max processes             61443                61443                processes 
+limits:9:Max open files            1024                 524288               files     
+limits:10:Max locked memory         65536                65536                bytes     
+limits:11:Max address space         unlimited            unlimited            bytes     
+limits:12:Max file locks            unlimited            unlimited            locks     
+limits:13:Max pending signals       61443                61443                signals   
+limits:14:Max msgqueue size         819200               819200               bytes     
+limits:15:Max nice priority         0                    0                    
+limits:16:Max realtime priority     0                    0                    
+limits:17:Max realtime timeout      unlimited            unlimited            us        
+grep: mountinfo: Invalid argument
+grep: mounts: Invalid argument
+grep: mountstats: Invalid argument
+grep: net: Invalid argument
+oom_adj:1:0
+oom_score:1:0
+oom_score_adj:1:0
+personality:1:00000000
+projid_map:1:         0          0 4294967295
+grep: root: No such file or directory
+schedstat:1:13025666 2749624 9
+setgroups:1:allow
+grep: smaps_rollup: No such process
+stat:1:19038 (make) Z 19035 8492 11885 34819 8492 4227084 278 14595 0 0 1 0 145 20 20 0 1 0 249531 0 0 18446744073709551615 0 0 0 0 0 0 0 16781312 8471047 0 0 0 17 3 0 0 0 0 0 0 0 0 0 0 0 0 0
+statm:1:0 0 0 0 0 0 0
+status:1:Name:	make
+status:2:State:	Z (zombie)
+status:3:Tgid:	19038
+status:4:Ngid:	0
+status:5:Pid:	19038
+status:6:PPid:	19035
+status:7:TracerPid:	0
+status:8:Uid:	1000	1000	1000	1000
+status:9:Gid:	1000	1000	1000	1000
+status:10:FDSize:	0
+status:11:Groups:	108 988 992 1000 
+status:12:NStgid:	19038
+status:13:NSpid:	19038
+status:14:NSpgid:	8492
+status:15:NSsid:	11885
+status:16:Threads:	1
+status:17:SigQ:	1/61443
+status:18:SigPnd:	0000000000000000
+status:19:ShdPnd:	0000000000000000
+status:20:SigBlk:	0000000000000000
+status:21:SigIgn:	0000000001001000
+status:22:SigCgt:	0000000180814207
+status:23:CapInh:	0000000000000000
+status:24:CapPrm:	0000000000000000
+status:25:CapEff:	0000000000000000
+status:26:CapBnd:	0000003fffffffff
+status:27:CapAmb:	0000000000000000
+status:28:NoNewPrivs:	0
+status:29:Seccomp:	0
+status:30:Speculation_Store_Bypass:	not vulnerable
+status:31:Cpus_allowed:	f
+status:32:Cpus_allowed_list:	0-3
+status:33:Mems_allowed:	00000000,00000001
+status:34:Mems_allowed_list:	0
+status:35:voluntary_ctxt_switches:	3
+status:36:nonvoluntary_ctxt_switches:	6
+syscall:1:-1 0x0 0x0
+grep: task/19038/net: Invalid argument
+task/19038/status:1:Name:	make
+task/19038/status:2:State:	Z (zombie)
+task/19038/status:3:Tgid:	19038
+task/19038/status:4:Ngid:	0
+task/19038/status:5:Pid:	19038
+task/19038/status:6:PPid:	19035
+task/19038/status:7:TracerPid:	0
+task/19038/status:8:Uid:	1000	1000	1000	1000
+task/19038/status:9:Gid:	1000	1000	1000	1000
+task/19038/status:10:FDSize:	0
+task/19038/status:11:Groups:	108 988 992 1000 
+task/19038/status:12:NStgid:	19038
+task/19038/status:13:NSpid:	19038
+task/19038/status:14:NSpgid:	8492
+task/19038/status:15:NSsid:	11885
+task/19038/status:16:Threads:	1
+task/19038/status:17:SigQ:	1/61443
+task/19038/status:18:SigPnd:	0000000000000000
+task/19038/status:19:ShdPnd:	0000000000000000
+task/19038/status:20:SigBlk:	0000000000000000
+task/19038/status:21:SigIgn:	0000000001001000
+task/19038/status:22:SigCgt:	0000000180814207
+task/19038/status:23:CapInh:	0000000000000000
+task/19038/status:24:CapPrm:	0000000000000000
+task/19038/status:25:CapEff:	0000000000000000
+task/19038/status:26:CapBnd:	0000003fffffffff
+task/19038/status:27:CapAmb:	0000000000000000
+task/19038/status:28:NoNewPrivs:	0
+task/19038/status:29:Seccomp:	0
+task/19038/status:30:Speculation_Store_Bypass:	not vulnerable
+task/19038/status:31:Cpus_allowed:	f
+task/19038/status:32:Cpus_allowed_list:	0-3
+task/19038/status:33:Mems_allowed:	00000000,00000001
+task/19038/status:34:Mems_allowed_list:	0
+task/19038/status:35:voluntary_ctxt_switches:	3
+task/19038/status:36:nonvoluntary_ctxt_switches:	6
+task/19038/personality:1:00000000
+task/19038/limits:1:Limit                     Soft Limit           Hard Limit           Units     
+task/19038/limits:2:Max cpu time              unlimited            unlimited            seconds   
+task/19038/limits:3:Max file size             unlimited            unlimited            bytes     
+task/19038/limits:4:Max data size             unlimited            unlimited            bytes     
+task/19038/limits:5:Max stack size            unlimited            unlimited            bytes     
+task/19038/limits:6:Max core file size        unlimited            unlimited            bytes     
+task/19038/limits:7:Max resident set          unlimited            unlimited            bytes     
+task/19038/limits:8:Max processes             61443                61443                processes 
+task/19038/limits:9:Max open files            1024                 524288               files     
+task/19038/limits:10:Max locked memory         65536                65536                bytes     
+task/19038/limits:11:Max address space         unlimited            unlimited            bytes     
+task/19038/limits:12:Max file locks            unlimited            unlimited            locks     
+task/19038/limits:13:Max pending signals       61443                61443                signals   
+task/19038/limits:14:Max msgqueue size         819200               819200               bytes     
+task/19038/limits:15:Max nice priority         0                    0                    
+task/19038/limits:16:Max realtime priority     0                    0                    
+task/19038/limits:17:Max realtime timeout      unlimited            unlimited            us        
+task/19038/comm:1:make
+task/19038/syscall:1:-1 0x0 0x0
+task/19038/stat:1:19038 (make) Z 19035 8492 11885 34819 8492 4227084 278 14595 0 0 1 0 145 20 20 0 1 0 249531 0 0 18446744073709551615 0 0 0 0 0 0 0 16781312 8471047 0 0 0 17 3 0 0 0 0 0 0 0 0 0 0 0 0 0
+task/19038/statm:1:0 0 0 0 0 0 0
+grep: task/19038/mounts: Invalid argument
+grep: task/19038/mountinfo: Invalid argument
+grep: task/19038/clear_refs: Invalid argument
+grep: task/19038/smaps_rollup: No such process
+grep: task/19038/attr/current: Invalid argument
+grep: task/19038/attr/prev: Invalid argument
+grep: task/19038/attr/exec: Invalid argument
+grep: task/19038/attr/fscreate: Invalid argument
+grep: task/19038/attr/keycreate: Invalid argument
+grep: task/19038/attr/sockcreate: Invalid argument
+task/19038/wchan:1:0
+task/19038/schedstat:1:13025666 2749624 9
+task/19038/cpuset:1:/
+task/19038/cgroup:1:10:memory:/
+task/19038/cgroup:2:9:cpuset:/
+task/19038/cgroup:3:8:blkio:/
+task/19038/cgroup:4:7:net_cls:/
+task/19038/cgroup:5:6:freezer:/
+task/19038/cgroup:6:5:devices:/
+task/19038/cgroup:7:4:cpu,cpuacct:/
+task/19038/cgroup:8:3:pids:/
+task/19038/cgroup:9:2:hugetlb:/
+task/19038/cgroup:10:1:name=systemd:/
+task/19038/cgroup:11:0::/user.slice/user-1000.slice/session-c1.scope
+task/19038/oom_score:1:0
+task/19038/oom_adj:1:0
+task/19038/oom_score_adj:1:0
+task/19038/io:1:rchar: 191007
+task/19038/io:2:wchar: 625
+task/19038/io:3:syscr: 99
+task/19038/io:4:syscw: 5
+task/19038/io:5:read_bytes: 0
+task/19038/io:6:write_bytes: 0
+task/19038/io:7:cancelled_write_bytes: 0
+task/19038/uid_map:1:         0          0 4294967295
+task/19038/gid_map:1:         0          0 4294967295
+task/19038/projid_map:1:         0          0 4294967295
+task/19038/setgroups:1:allow
+timerslack_ns:1:50000
+uid_map:1:         0          0 4294967295
+wchan:1:0
+[Z575 19038]# 
+
+^
+zombie 'make's are still a thing on Z575(at least) while building firefox(usually doesn't happen on first try, only if build fails 1+ times and I just continue via ./2* ):
+
+first reported:
+freenode/#archlinux.log:2385:Jun 15 07:50:27 <howaboutsynergy>  Hi. I've got some Zombie `make` processes which are causing firefox compilation to stall(forever?), any idea what could've caused them to become zombie?
+
+^ first kernel: 5.1.9-g2df16141a2c4  (on i87k)
+current kernel: 5.2.2-ge9b75c60f91a  (on Z575)
+
+gist log: https://gist.github.com/howaboutsynergy/3339ad77dff88d3be8f57e0d98816e5b
+
+to get rid of zombie 'make' processes, one must kill the parent 'make' (or simply C-c the (now-stalled) compilation)
+https://stackoverflow.com/questions/16944886/how-to-kill-zombie-process
+-----------
+
+try RT kernel patch
+
+see files in /home/user/build/1packages/4used/kernel/linux-stable/orig-linux-rt/linux-rt/
+
+With non-RT patch kernel(aka linux-stable) during firefox compilation:
+$ time sudo cyclictest --smp -p98 -m
+# /dev/cpu_dma_latency set to 0us
+policy: fifo: loadavg: 18.73 13.64 12.32 19/476 28743            
+
+T: 0 (11958) P:98 I:1000 C:3918158 Min:      0 Act:   22 Avg:   16 Max:   30160
+T: 1 (11959) P:98 I:1500 C:2615503 Min:      0 Act:   18 Avg:   17 Max:   24934
+T: 2 (11962) P:98 I:2000 C:1962406 Min:      0 Act:   35 Avg:   19 Max:   60543
+T: 3 (11963) P:98 I:2500 C:1570678 Min:      0 Act:   21 Avg:   20 Max:   32266
+T: 4 (11964) P:98 I:3000 C:1309074 Min:      0 Act:   25 Avg:   21 Max:   57854
+T: 5 (11965) P:98 I:3500 C:1122211 Min:      0 Act:   33 Avg:   21 Max:   63908
+T: 6 (11966) P:98 I:4000 C: 982033 Min:      0 Act:   22 Avg:   23 Max:   22078
+T: 7 (11967) P:98 I:4500 C: 873208 Min:      0 Act:   27 Avg:   22 Max:   20045
+T: 8 (11968) P:98 I:5000 C: 786000 Min:      0 Act:   12 Avg:   15 Max:   24771
+T: 9 (11969) P:98 I:5500 C: 714567 Min:      0 Act:    8 Avg:   19 Max:   28380
+T:10 (11970) P:98 I:6000 C: 655121 Min:      0 Act:   40 Avg:   25 Max:   11715
+T:11 (11971) P:98 I:6500 C: 604675 Min:      0 Act:   27 Avg:   20 Max:   45565
+^C
+real	65m31.709s
+user	0m39.531s
+sys	1m56.750s
+--------
+`man xfce4-terminal`
+no man pages are installed via /home/user/build/1packages/4used/xfce4-terminal/
+maybe this always happens for git? or some new git changes caused this?
+-------
+remove all gpg2 keys from i87k (used for signing commits) - already did on Z575
+see also the ones inside /root/ (if any)
+--
+get new gpg2 signing keys?!! for both hosts!
+$ gpg --full-gen-key
+
+-------
+test this? disk writes
+https://bugzilla.kernel.org/show_bug.cgi?id=196157#c34
+and maybe see also: https://bugzilla.kernel.org/show_bug.cgi?id=198199
+
+maybe look into RCU stuff in kernel .config, to turn them off?
+
+also search in this todo file because there's another similar issue to this!
+
+//wait what? fix? https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?h=linux-5.3.y&id=1e04eb03877c3e0a38c1be1845be97074a1198b6
+nope, that didn't seem to have affected anything in terms of youtube videos skipping frames or freezing out right.
+-----
+switch to lxqt ?
+
+https://wiki.archlinux.org/index.php/window_manager#Dynamic_window_managers
+https://wiki.archlinux.org/index.php/Desktop_Environment#List_of_desktop_environments
+https://wiki.archlinux.org/index.php/LXQt#Installation
+https://wiki.archlinux.org/index.php/Twm
+https://github.com/way-cooler/way-cooler
+---------
+some gtk stuff
+https://wiki.archlinux.org/index.php/GTK#Disable_overlay_scrollbars
+------
+
+firefox dns notes:
+
+firefox: !! REENTRANT_NAME == 'gethostbyname_r' hostname='www.phoronix.com'
+! Resolved1(PR_SUCCESS:1) via (gethostbyname_r(name, &tmphe, tmpbuf, bufsize, &h, &h_err), h)(1) the hostname 'www.phoronix.com' with official name: 'www.phoronix.com'	h_name: 'www.phoronix.com'	h_addrtype: '2'	h_length: '4'	h_addr_list[0]: '104.18.60.250'	
+
+firefox: !! REENTRANT_NAME == 'gethostbyname_r' hostname='browser.safebrowsing.provider.mozilla.updateurl.firefox_blocked_domain.tld'
+!! Couldn't resolve(via (gethostbyname_r(name, &tmphe, tmpbuf, bufsize, &h, &h_err), h)(1)) the hostname: browser.safebrowsing.provider.mozilla.updateurl.firefox_blocked_domain.tld
+
+
+cdff
+v nsprpub/pr/src/misc/prnetdb.c
+
+cd /home/user/build/1packages/4used/glibc
+v show_getaddrinfo_requests.patch
+v /home/user/build/1packages/4used/glibc/makepkg_pacman/glibc/src/glibc/sysdeps/posix/getaddrinfo.c
+
+---------
+see chrome://policy  the adminSettings policy of uBlock Origin, in chromium.
+we can override that with the contents of the backup as Json value
+^ see descr. /home/user/build/2nonpkgs/browser.stuff/both/uBlock/uBlock/platform/chromium/managed_storage.json
+
+and maybe also keep the values added by the patches? even though the policy will override them
+--------
+use groups and the owner module of iptables to restrict chromium net access to only specific hosts
+
+sudo -g no-internet -- "$@"
+$ iptables -m owner --help
+
+and/or make this more generic so that any process can be targeted!
+-------
+move uname -a stuff from rust.log into its own filename!
+eg. OSes/archlinux/rust.log.hostspecific=Z575
+----------
+
+remove favorites= and recent= from //home/user/.config/xfce4/panel/whiskermenu-16.rc
+at ./4 step of rsank
+I think recent= is removed already! recheck!
+so only favorites= must be removed next!
+------
+look into why kernel compilation depends on linux api headers being installed on the system, because ccache misses always if newer ones are installed! hence why ./q or `./0 q` was made.
+-----
+in tst, modify source code so that default for Tree Behaviour(first two options) is to NOT auto-collapse
+------
+segfault in pavucontrol if Ctrl+Q is pressed!
+it's in #0  0x000072c1b16e7c81 in Gtk::Main::quit() () at /usr/lib/libgtkmm-3.0.so.1
+/usr/lib/libgtkmm-3.0.so.1 is owned by gtkmm3 3.24.1-1
+need to recompile that with debug info
+------
+fix ctrl+left/right in vim, on console, because I modded them to work on bash prompt(on console, not xterm) and now they don't in vim!
+-------
+nss 3.46 cannot be compiled due to two warnings(treated as errors)
+/home/user/build/1packages/4used/nss
+
+nss 3.45 is upstream (and installed) currently!
+----
+remove tcp port 46801 vnc allowances in iptables
+(in two places!)
+-------
+profile-sync-daemon is broken with system 243 ? (via ssh)
+psd p
+ ERROR: Cannot find XDG_RUNTIME_DIR which should be set by systemd.
+
+it's likely this was true before, through ssh!
+in xfce4-terminal:
+$ echo $XDG_RUNTIME_DIR
+/run/user/1000
+
+------
+/proc/pressure/cpu has only some , not a full line?! mkay
+5.3.0-rc6-g31bb5feb0d28
+-----
+//test if crashdump sysrq+c works with zram on!
+//nope!!! it tries to enter emergency shell and at the same time save the dump, so if you press Enter it will kill the dumper! because the root password was incorrect while trying to run the emergency shell!
+//nvmFIXME: make zram work? or make it use tmpfs instead!
+//done by adding kernel arg fstab=no to kdump kernel! it uses tmpfs now
+-----
+
+find out how to fix `cd -P .`, which I used in a function cd() in ~/.second.bashrc, to act like `cd .`
+
+it doesn't even error:
+$ mkdir -p /tmp/1; cd /tmp/1; rmdir /tmp/1; mkdir /tmp/1; ls -la; command cd -P .; echo "exit code=$?"; ls -la ; command cd .; ls -la
+total 0
+exit code=0
+total 0
+total 40
+drwxr-xr-x  2 user user  4096 23.09.2019 15:19 ./
+drwxrwxrwt 41 root root 36864 23.09.2019 15:19 ../
+
+/home/user/build/1packages/4used/bash-devel-git/makepkg_pacman/bash/src/bash/builtins/cd.def
+------
+stderr is stdout during `gn args` wtf:
+
+$ gn args /home/user/build/1packages/4used/chro3/ungoogled-chromium-archlinux/fetch_gclient_base/checkout_root/src//out/Default --list
+ERROR at //printing/BUILD.gn:159:22: Script returned non-zero exit code.
+      cups_version = exec_script("cups_config_helper.py",
+                     ^----------
+Current dir: /home/user/build/1packages/4used/chro3/ungoogled-chromium-archlinux/fetch_gclient_base/checkout_root/src/out/Default/
+Command: python /home/user/build/1packages/4used/chro3/ungoogled-chromium-archlinux/fetch_gclient_base/checkout_root/src/printing/cups_config_helper.py --api-version 
+Returned 1.
+stderr:
+
+  File "/home/user/build/1packages/4used/chro3/ungoogled-chromium-archlinux/fetch_gclient_base/checkout_root/src/printing/cups_config_helper.py", line 70
+    print 'cups-config not found: %s' % cups_config
+                                    ^
+SyntaxError: Missing parentheses in call to 'print'. Did you mean print('cups-config not found: %s' % cups_config)?
+
+See //BUILD.gn:140:7: which caused the file to be included.
+      "//printing:printing_unittests",
+      ^------------------------------
+-----------
+user@Z575 2019/09/23 19:54:12 -bash5.0.11 t:5 j:0 d:3 pp:1040 p:75474 ut70468
+!13274 6 1  5.3.1-gc9a59a82366b #17 SMP PREEMPT Sat Sep 21 21:39:45 CEST 2019
+/home/user/build/1packages/4used/chro3/ungoogled-chromium-archlinux/fetch_gclient_base/checkout_root/src 
+$ gn args /home/user/build/1packages/4used/chro3/ungoogled-chromium-archlinux/fetch_gclient_base/checkout_root/src//out/Default --list > /dev/null
+===----------
+
+enable schedutil on i87k:
+https://www.phoronix.com/forums/forum/phoronix/latest-phoronix-articles/1129957-significant-performance-perf-per-watt-gains-coming-for-intel-cpus-on-linux-schedutil#post1129978
+
+ok so, in /etc/default/tlp on i87k:
+1. comment out the two CPU_ENERGY_PERF_POLICY_ON_AC which are for intel_pstate driver (unless I'm missing something! i might be! EPB might be in effect instead! which means this still has effect!)
+2. set CPU_SCALING_GOVERNOR_ON_AC to schedutil (just above the 1.)
+
+alternative way:
+/etc/default/cpupower
+governor='schedutil'
+perf_bias=0
+ thanks: https://www.phoronix.com/forums/forum/phoronix/latest-phoronix-articles/1129957-significant-performance-perf-per-watt-gains-coming-for-intel-cpus-on-linux-schedutil?p=1129988#post1129988
+
+but this will need tlp stuff in way1 above to be disabled/unset!
+
+Maybe this is also needed? kernel arg:
+intel_pstate=passive
+to have schedutil as available governor:
+cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_available_governors
+  thanks: https://www.phoronix.com/forums/forum/phoronix/latest-phoronix-articles/1129957-significant-performance-perf-per-watt-gains-coming-for-intel-cpus-on-linux-schedutil?p=1130060#post1130060
+sudo cpupower frequency-set --governor schedutil
+
+--------
+frozen screen but not the OS (ie. audio was still playing!)
+sysrq+c made screen black and ctrl+alt+del aka sysrq+b (first time) didn't wake it up from black screen even though multiple bios POSTs happened, until power down and then power back up from physical button!
+
+journalctl -b -1 showed:
+Oct 02 17:54:31 Z575 glibc64:../sysdeps/posix/getaddrinfo.c:2201/getaddrinfo[3022927]: !! REENTRANT_NAME == 'gethostbyname2_r' hostname='fonts.gstatic.com'
+Oct 02 17:54:31 Z575 chromium[3022927]: [2.9K blob data]
+Oct 02 17:55:16 Z575 systemd-journald[250]: Missed 12 kernel messages
+Oct 02 17:55:16 Z575 kernel: sysrq: Emergency Sync
+Oct 02 17:55:17 Z575 kernel: Emergency Sync complete
+Oct 02 17:55:34 Z575 kernel: sysrq: HELP : loglevel(0-9) reboot(b) crash(c) terminate-all-tasks(e) memory-full-oom-kill(f) kill-all-tasks(i) thaw-filesystems(j) sak(k) show-backtrace-all-acti>
+Oct 02 17:55:34 Z575 kernel: sysrq: HELP : loglevel(0-9) reboot(b) crash(c) terminate-all-tasks(e) memory-full-oom-kill(f) kill-all-tasks(i) thaw-filesystems(j) sak(k) show-backtrace-all-acti>
+Oct 02 17:55:41 Z575 kernel: sysrq: Emergency Sync
+Oct 02 17:55:42 Z575 kernel: Emergency Sync complete
+Oct 02 17:55:42 Z575 kernel: sysrq: Emergency Sync
+Oct 02 17:55:42 Z575 kernel: Emergency Sync complete
+Oct 02 17:55:44 Z575 kernel: sysrq: Emergency Sync
+Oct 02 17:55:44 Z575 kernel: Emergency Sync complete
+Oct 02 17:55:46 Z575 kernel: sysrq: Show Blocked State
+Oct 02 17:55:46 Z575 kernel:   task                        PC stack   pid father
+Oct 02 17:55:46 Z575 kernel: kworker/2:2H    D    0 3020205      2 0x80004000
+Oct 02 17:55:46 Z575 kernel: Workqueue: radeon-crtc radeon_flip_work_func
+Oct 02 17:55:46 Z575 kernel: Call Trace:
+Oct 02 17:55:46 Z575 kernel:  ? __schedule+0x22f/0x5a0
+Oct 02 17:55:46 Z575 kernel:  ? schedule+0x3b/0xc0
+Oct 02 17:55:46 Z575 kernel:  ? schedule_timeout+0x1de/0x2a0
+Oct 02 17:55:46 Z575 kernel:  ? radeon_fence_process+0x9/0x40
+Oct 02 17:55:46 Z575 kernel:  ? radeon_fence_wait_seq_timeout+0x103/0x240
+Oct 02 17:55:46 Z575 kernel:  ? wait_woken+0x80/0x80
+Oct 02 17:55:46 Z575 kernel:  ? radeon_fence_wait_timeout+0x58/0xc0
+Oct 02 17:55:46 Z575 kernel:  ? radeon_fence_wait+0x13/0x20
+Oct 02 17:55:46 Z575 kernel:  ? radeon_flip_work_func+0x1ae/0x220
+Oct 02 17:55:46 Z575 kernel:  ? process_one_work+0x192/0x2e0
+Oct 02 17:55:46 Z575 kernel:  ? worker_thread+0x45/0x3e0
+Oct 02 17:55:46 Z575 kernel:  ? kthread+0xee/0x140
+Oct 02 17:55:46 Z575 kernel:  ? process_one_work+0x2e0/0x2e0
+Oct 02 17:55:46 Z575 kernel:  ? kthread_park+0x80/0x80
+Oct 02 17:55:46 Z575 kernel:  ? ret_from_fork+0x1f/0x30
+Oct 02 17:55:50 Z575 kernel: sysrq: Emergency Sync
+Oct 02 17:55:50 Z575 kernel: Emergency Sync complete
+Oct 02 17:55:56 Z575 kernel: sysrq: Emergency Sync
+
+hwaccel was disabled in chromium, and I was watching a youtube video at the time while ./0 in firefox with a previously just removed makepkg_pacman dir, which means it has to recreate it! there's no trace of it now after boot, as if it wasn't ever created, as if ./0 never ran
+
+//hopefully fixed by this?
+//https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=73956fc07dd7b25d4a33ab3fdd6247c60d0b237c
+//checking... yep it's there in 5.3.3 but maybe it's not the same hmm...
+//oh yeah it's definitely not the same!! so no, it's not there!
+//https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/diff/kernel/sched/membarrier.c?id=73956fc07dd7b25d4a33ab3fdd6247c60d0b237c&context=40&ignorews=0&dt=0
+//confirmed not there: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/log/kernel/sched/membarrier.c
+//last log shows 2019 may 26th /30
+
+//wait, wtf? how am I running v5.3.3 kernel, whilst v5.3.2 is available on https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/log/?h=linux-5.3.y
+//what teh?!
+//it should be 5.3.2.r1.g9c30694424ee for linux-stable! but shows 5.3.3-g9c30694424ee  tehfff
+//pkgver from PKGBUILD does a
+//git describe --long | sed -E 's/^v//;s/([^-]*-g)/r\1/;s/-/./g;s/\.rc/rc/'
+//which yields the same value from PKGBUILD from linux-stable which is 5.3.2.r1.g9c30694424ee
+//so that's good!
+//
+//the linuxgit one is 5.3rc8.r142.g72dbcf721566
+//oh wait, this is why: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?h=linux-5.3.y&id=9c30694424ee15cc30a23f92a913d5322b9e5bd2
+//5.3.3 because SUBLEVEL is 3 ! good one!
+
+
+new crash: https://gist.github.com/howaboutsynergy/a18891c58fca76efe954880675e9dd9a
+but possibly unrelated!
+
+got another crash(without schedutil.patch and zstd52.patch) and this one is related, the sound was on a loop, no keys were working, screen went black! cpu usage high, and nothing got logged in the journal! since I could sysrq+c to manually crash, I've no idea what caused it!!! with linux-stable 5.3.5-gdc073f193b70
+
+another crash, related, and it's only needed to play youtube videos, usually at the beginning of the video! At crash, the sound is on a loop, then video blanks in a few seconds, no sysrq working!(or numlock!), after reboot some files are 0 bytes(thanks btrfs!) with kernel 5.3.0-g4d856f72c10e with schedutil.patch !!! so it's either schedutil! or it's the 5.3 kernel!
+
+been using this for a while,
+local/xf86-video-ati 1:19.0.1.r7.gc7ed12cb-1 (builtbydaddy xorg-drivers)
+Build Date      : Wed 18 Sep 2019 12:58:38 AM CEST
+Install Date    : Wed 18 Sep 2019 12:59:19 AM CEST
+
+hopefully fixed by this: https://www.phoronix.com/scan.php?page=news_item&px=Linux-5.4-Critical-Scheduler-BF
+which is in 5.4-rc7 as per this https://www.phoronix.com/scan.php?page=news_item&px=Linux-5.4-rc7-Released
+
+---------
+removed disk performance monitor xfce4-panel plugin due to this issue https://bugzilla.xfce.org/show_bug.cgi?id=15881
+just in case it was the culprit for me when high writes were happening and youtube videos would be stuttering!
+
+maybe bring it back at some point
+or maybe try that multiload-ng but it's only on yaourt and it's lots of them
+-------
+
+//see if ttl is being honored for ping-ing
+//net.ipv4.ip_default_ttl
+//maybe it just doesn't have effect in the current session only? but it does after reboot?
+//OR for ping it's simply ignored?
+//
+//actually this is good, what I'm seeing is the ttl from the responder! which should be different than my own(sender)!
+-------
+
+on i87k, replace -march=skylake-avx512 with -march=skylake
+because it's faster according to: https://www.phoronix.com/scan.php?page=article&item=icelake-gcc-tuning&num=4
+
+looks like changes are needed only in glibc and linuxgit arch packages!
+
+or maybe not? " However, the problem with these benchmark results is that they might suggest to the uninitiated that AVX-512 is to be avoided if one wants the best possible performance, which is obviously far from the truth."
+src: https://www.phoronix.com/forums/forum/phoronix/latest-phoronix-articles/1140680-a-look-at-the-gcc-compiler-tuning-performance-impact-for-intel-ice-lake?p=1140696#post1140696
+
+or maybe yes: "Using the full 512 can cause an additional processor downclock (over the 256 downclock). So careful tuning is required to know which is better for which type of application, and the compilers heuristics will never be perfect (compilers are still not omniscient). "
+src: https://www.phoronix.com/forums/forum/phoronix/latest-phoronix-articles/1140680-a-look-at-the-gcc-compiler-tuning-performance-impact-for-intel-ice-lake?p=1140700#post1140700
+
+"Given the similar outcome with Skylake-AVX512, presumably it's due to the AVX-512 usage leading to lower clock frequencies."
+from article.
+-------
+
+maybe try using admgpu on Z575 instead of radeon ?
+see drivers/gpu/drm/amd/amdgpu/Kconfig
+and Enable-BACO-for-power-savings.mbox from: https://patchwork.freedesktop.org/series/67885/
+--------
+//this firefox bug whereby browser.fixup.dns_first_for_single_words acts as if always true:
+//https://bugzilla.mozilla.org/show_bug.cgi?id=1581660
+//is caused by this commit:
+//https://bugzilla.mozilla.org/show_bug.cgi?id=1578856
+//actually, works as expected: DNS lookup is meant to happen regardless of the setting! https://bugzilla.mozilla.org/show_bug.cgi?id=1578856#c43
+//made patch: no_singlewords_dnslookup.patch
+------
+NOTE: somewhere between
+# good: [4d856f72c10ecb060868ed10ff1b1453943fc6c8] Linux 5.3
+and
+commit b31333298087f8ee3559bd62bcbd1638f232cac0 (HEAD)
+Date:   Thu Nov 14 08:28:47 2019 -0800
+
+the kernel got my OS bootup speed fixed, see systemd-analyze, by about 7-8 seconds less!
+now, after fix, it's like:
+$ systemd-analyze 
+Startup finished in 4.063s (kernel) + 5.800s (userspace) = 9.863s 
+graphical.target reached after 5.790s in userspace
+
+previously, userspace was higher, and total was like 18s
+
+kernel stable 5.4.2 is fast, but 5.4.3 is slower by 1 sec
+5.4.3:
+$ systemd-analyze 
+Startup finished in 5.055s (kernel) + 6.371s (userspace) = 11.426s 
+graphical.target reached after 6.361s in userspace
+reinstlaled the same 5.4.2:
+$ systemd-analyze 
+Startup finished in 5.177s (kernel) + 6.194s (userspace) = 11.372s 
+graphical.target reached after 6.184s in userspace
+
+well I guess then it's something else now, isn't it!
+
+5.4.3 reinstalled:
+$ systemd-analyze 
+Startup finished in 5.063s (kernel) + 6.190s (userspace) = 11.253s 
+graphical.target reached after 6.180s in userspace
+
+^ all these 3 were with LAN cable already plugged in!
+------
+//NIC remains in suspend even after cable is plugged in
+//$ git bisect log
+//git bisect start
+//# bad: [81b6b96475ac7a4ebfceae9f16fb3758327adbfe] Merge branch 'master' of git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux; tag 'dma-mapping-5.5' of git://git.infradead.org/users/hch/dma-mapping
+//git bisect bad 81b6b96475ac7a4ebfceae9f16fb3758327adbfe
+//# good: [4d856f72c10ecb060868ed10ff1b1453943fc6c8] Linux 5.3
+//git bisect good 4d856f72c10ecb060868ed10ff1b1453943fc6c8
+//# skip: [351c8a09b00b5c51c8f58b016fffe51f87e2d820] Merge branch 'i2c/for-5.4' of git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux
+//git bisect skip 351c8a09b00b5c51c8f58b016fffe51f87e2d820
+//# skip: [351c8a09b00b5c51c8f58b016fffe51f87e2d820] Merge branch 'i2c/for-5.4' of git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux
+//git bisect skip 351c8a09b00b5c51c8f58b016fffe51f87e2d820
+//# bad: [b31333298087f8ee3559bd62bcbd1638f232cac0] samples/bpf: Add missing option to xdpsock usage
+//git bisect bad b31333298087f8ee3559bd62bcbd1638f232cac0
+//# bad: [32b90daf5cafdda62b1ce62d0b7445fa9107babf] Merge tag 'tag-chrome-platform-for-v5.4' of git://git.kernel.org/pub/scm/linux/kernel/git/chrome-platform/linux
+//git bisect bad 32b90daf5cafdda62b1ce62d0b7445fa9107babf
+//# good: [1f7d290a7275edb270dbee13212c37cb59940221] Merge tag 'driver-core-5.4-rc1' of git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/driver-core
+//git bisect good 1f7d290a7275edb270dbee13212c37cb59940221
+//# bad: [35c7ff349a2d1df1b59909f67ba4ddcd84ad934e] mlx4: Split restart_one into two functions
+//git bisect bad 35c7ff349a2d1df1b59909f67ba4ddcd84ad934e
+//# good: [1216ce9d4a740bed88393177174fef275069a560] net/mlx5e: Extend neigh hash entry with rcu
+//git bisect good 1216ce9d4a740bed88393177174fef275069a560
+//# bad: [67e974c3ae21c8ced474eae3ce9261a6f827e95c] Merge tag 'iwlwifi-next-for-kalle-2019-09-06' of git://git.kernel.org/pub/scm/linux/kernel/git/iwlwifi/iwlwifi-next
+//git bisect bad 67e974c3ae21c8ced474eae3ce9261a6f827e95c
+//# bad: [657a33c8a0a2342e91259b28356838dc89216b19] bnxt_en: Add devlink health reset reporter.
+//git bisect bad 657a33c8a0a2342e91259b28356838dc89216b19
+//# good: [99122836d26a366847f92f9a211602a44a038c61] net: stmmac: add EHL SGMII 1Gbps PCI info and PCI ID
+//git bisect good 99122836d26a366847f92f9a211602a44a038c61
+//# bad: [42aa15cf05c0a47cc5807c21c7ff471b80cad371] net: dsa: mv88e6xxx: fix freeing unused SERDES IRQ
+//git bisect bad 42aa15cf05c0a47cc5807c21c7ff471b80cad371
+//# good: [8e4a2adcedac01c4269ae104824b9078870000b1] Merge branch '100GbE' of git://git.kernel.org/pub/scm/linux/kernel/git/jkirsher/next-queue
+//git bisect good 8e4a2adcedac01c4269ae104824b9078870000b1
+//# bad: [6125b52d2641497228e806c60b906769ab4b2c19] net: hns3: modify base parameter of kstrtouint in hclge_dbg_dump_tm_map
+//git bisect bad 6125b52d2641497228e806c60b906769ab4b2c19
+//# bad: [198836fdff09f45d09fd6d291e0ebda25d393bf4] Merge branch 'mlxsw-Various-updates'
+//git bisect bad 198836fdff09f45d09fd6d291e0ebda25d393bf4
+//# bad: [3f61967f4197547fb1888642d5178a64ca9fb191] mlxsw: spectrum: Prevent auto negotiation on number of lanes
+//git bisect bad 3f61967f4197547fb1888642d5178a64ca9fb191
+//# bad: [95fb8bb3181bbe1ee87c95e91dff94f74f148c33] net: phy: force phy suspend when calling phy_stop
+//git bisect bad 95fb8bb3181bbe1ee87c95e91dff94f74f148c33
+//# first bad commit: [95fb8bb3181bbe1ee87c95e91dff94f74f148c33] net: phy: force phy suspend when calling phy_stop
+//
+//https://bugzilla.kernel.org/show_bug.cgi?id=202103#c20
+-------
+to compile firefox-hg with PGO, keep the --enable-tests and don't use ./mach build in PKGBUILD, find the PGO doc online
+-------
+
+try intel_pstate=disable ? on i87k kernel cmdline
+
+src: https://www.phoronix.com/forums/forum/phoronix/latest-phoronix-articles/1142775-linux-5-5-seeing-some-wild-swings-in-performance-improvements-but-also-regressions?p=1142798#post1142798
+---------
+maybe add some more CFLAGS? from: https://www.phoronix.com/forums/forum/phoronix/latest-phoronix-articles/1144447-clear-linux-on-the-onlogic-karbon-700-boosted-performance-by-13-over-ubuntu-with-141-benchmarks?p=1144467#post1144467
+
+like: -fPIC -falign-functions=32 -mbranches-within-32B-boundaries
+---------
+maybe use barrier instead of x11vnc ?
+https://github.com/debauchee/barrier
+--------
+switch away from archlinux due to security updates not being fixed in time
+this 'file' one still isn't updated/fixed/patched and it's been like 3+ weeks now: https://bugs.archlinux.org/task/64430
+https://git.archlinux.org/svntogit/packages.git/log/trunk?h=packages/file
+compare with gentoo:
+https://bugs.gentoo.org/698610
+https://gitweb.gentoo.org/repo/gentoo.git/log/sys-apps/file/file-5.37-r1.ebuild
+compare with nixos:
+in nixpkgs repo:
+commit 99273fc55533db11748750f5337f0791e8233cee
+Date:   Sat Oct 26 14:28:02 2019 +0100
+path: /tmp/nixpkgs/pkgs/tools/misc/file
+
+upstream was commited on 26 aug 2019: https://github.com/file/file/commit/46a8443f76cec4b41ec736eca396984c74664f84.patch
+not sure why commit itself is listed sept 17 2001 though
+
+guix has 5.33 so outdated
+nixos is too bugged to transition to, without giving up on lots of customizations and being annoying by conflicting files.
+
+debian applied it on 22 oct 2019 as cherry-pick.FILE5_37-67-g46a8443f.limit-the-number-of-elements-in-a-vector-found-by-oss-fuzz.patch
+https://buildd.debian.org/status/fetch.php?pkg=file&arch=amd64&ver=1%3A5.37-6&stamp=1571784031&raw=0
+https://packages.debian.org/buster/file
+
+------
+these dmesg lines aren't seen by ~/bin/showdns:
+[ 7208.633436] VirtualBoxVM[112634]: !! FUNCTION_NAME == 'gethostbyname' hostname='deb.devuan.org'
+[ 7208.666848] VirtualBoxVM[112634]: !! REENTRANT_NAME == 'gethostbyname_r' hostname='deb.devuan.org'
+[ 7208.741924] VirtualBoxVM[112634]: !! FUNCTION_NAME == 'gethostbyname' hostname='deb.debian.org'
+[ 7208.742250] VirtualBoxVM[112634]: !! REENTRANT_NAME == 'gethostbyname_r' hostname='deb.debian.org'
+-------
+//replace the dpaste script with curl from file.io
+//https://www.file.io/#one
+//just use an expiry of like 1y or something
+actually, use https://termbin.com/
+it can be done via redirecting to netcat!
+-----
+the kind of sh* that systemd does during a longer 'sync'(command):
+[ 5440.381452] sudo[164339]:     user : TTY=pts/4 ; PWD=/home/user/VirtualBox VMs/Devuan ; USER=root ; COMMAND=/usr/bin/btrfs filesystem defragment -czstd -r -v .
+[ 5440.387219] sudo[164339]: pam_unix(sudo:session): session opened for user root by (uid=0)
+[ 5488.281199] gpg-agent[1102]: handler 0x7f892546b700 for fd 10 started
+[ 5563.748025] INFO: task systemd-journal:247 blocked for more than 36 seconds.
+[ 5563.748033]       Tainted: G          I       5.4.6-g957a16c3e6e1 #43
+[ 5563.748035] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[ 5563.748038] systemd-journal D    0   247      1 0x00004100
+[ 5563.748043] Call Trace:
+[ 5563.748054]  ? __schedule+0x2ff/0x640
+[ 5563.748059]  ? schedule+0x3b/0xc0
+[ 5563.748064]  ? wait_for_commit+0x4e/0x80
+[ 5563.748067]  ? wait_woken+0x80/0x80
+[ 5563.748070]  ? btrfs_commit_transaction+0x7a7/0x8e0
+[ 5563.748074]  ? dput+0xb9/0x2c0
+[ 5563.748078]  ? btrfs_log_dentry_safe+0x50/0x60
+[ 5563.748082]  ? btrfs_sync_file+0x290/0x380
+[ 5563.748087]  ? do_fsync+0x33/0x80
+[ 5563.748090]  ? __x64_sys_fsync+0xb/0x20
+[ 5563.748093]  ? do_syscall_64+0x3d/0x100
+[ 5563.748097]  ? entry_SYSCALL_64_after_hwframe+0x44/0xa9
+[ 5594.080572] systemd[1]: systemd-journald.service: Watchdog timeout (limit 3min)!
+[ 5594.080651] systemd[1]: systemd-journald.service: Killing process 247 (systemd-journal) with signal SIGABRT.
+[ 5624.330617] systemd[1]: systemd-journald.service: State 'stop-watchdog' timed out. Terminating.
+[ 5654.580655] systemd[1]: systemd-journald.service: State 'stop-sigterm' timed out. Killing.
+[ 5654.580758] systemd[1]: systemd-journald.service: Killing process 247 (systemd-journal) with signal SIGKILL.
+[ 5654.580897] systemd[1]: systemd-journald.service: Killing process 171499 (journal-offline) with signal SIGKILL.
+[ 5673.370468] systemd[1]: systemd-journald.service: Main process exited, code=killed, status=9/KILL
+[ 5673.370606] systemd[1]: systemd-journald.service: Failed with result 'watchdog'.
+[ 5673.371833] systemd[1]: systemd-journald.service: Scheduled restart job, restart counter is at 1.
+[ 5673.376549] systemd[1]: Stopping Flush Journal to Persistent Storage...
+[ 5673.381739] systemd[1]: systemd-journal-flush.service: Succeeded.
+[ 5673.382253] systemd[1]: Stopped Flush Journal to Persistent Storage.
+[ 5673.382651] systemd[1]: Stopped Journal Service.
+[ 5673.382737] systemd[1]: Condition check resulted in Journal Audit Socket being skipped.
+[ 5673.384610] systemd[1]: Starting Journal Service...
+[ 5674.863189] systemd-journald[177341]: File /var/log/journal/d5085e3ae51043e897b15a1939322324/system.journal corrupted or uncleanly shut down, renaming and replacing.
+[ 5674.991106] systemd[1]: Started Journal Service.
+[ 5674.991260] gpg-agent[1102]: handler 0x7f892546b700 for fd 10 terminated
+[ 5674.993160] systemd[1]: Starting Flush Journal to Persistent Storage...
+[ 5675.079863] systemd-journald[177341]: File /var/log/journal/d5085e3ae51043e897b15a1939322324/user-1000.journal corrupted or uncleanly shut down, renaming and replacing.
+[ 5675.115083] gpg-agent[1102]: handler 0x7f8924c6a700 for fd 10 started
+[ 5675.115371] gpg-agent[1102]: handler 0x7f8924c6a700 for fd 10 terminated
+[ 5675.115465] gpg-agent[1102]: handler 0x7f892546b700 for fd 10 started
+[ 5675.115548] gpg-agent[1102]: handler 0x7f892546b700 for fd 10 terminated
+[ 5675.115632] gpg-agent[1102]: handler 0x7f8924c6a700 for fd 10 started
+[ 5675.115775] gpg-agent[1102]: handler 0x7f8924c6a700 for fd 10 terminated
+[ 5675.116295] systemd-journald[177341]: Received client request to flush runtime journal.
+[ 5675.169707] sudo[170964]:     user : TTY=pts/5 ; PWD=/home/user/VirtualBox VMs/debian_stable ; USER=root ; COMMAND=validate
+[ 5675.170512] sudo[164339]: pam_unix(sudo:session): session closed for user root
+[ 5675.170669] systemd[1]: Started Flush Journal to Persistent Storage.
+[ 5675.170823] user[176297]: Not already root, re-executing '/home/user/bin/sync' as root by using sudo.
+[ 5675.280823] sudo[176260]:     user : TTY=pts/4 ; PWD=/home/user/VirtualBox VMs/Devuan ; USER=root ; COMMAND=/home/user/bin/sync
+[ 5675.281407] sudo[176260]: pam_unix(sudo:session): session opened for user root by (uid=0)
+[ 5675.281660] sudo[177433]:     user : TTY=pts/5 ; PWD=/home/user/VirtualBox VMs/debian_stable ; USER=root ; COMMAND=/usr/bin/compsize .
+[ 5675.281819] sudo[177433]: pam_unix(sudo:session): session opened for user root by (uid=0)
+[ 5675.281932] sudo[177433]: pam_unix(sudo:session): session closed for user root
+[ 5675.872168] sudo[176260]: pam_unix(sudo:session): session closed for user root
+-----
+try using BMQ scheduler to see the diff in compiling speed:
+as per: https://www.phoronix.com/forums/forum/phoronix/latest-phoronix-articles/1150331-torvalds-comments-on-linux-scheduler-woes-pure-garbage?p=1150342#post1150342
+bmq is here: https://gitlab.com/alfredchen/linux-bmq/commits/linux-5.4.y-bmq
+unsure how to get only the patch out hmm...
+
+also per: https://www.phoronix.com/scan.php?page=article&item=radeon-gaming-liquorix54&num=1
+^ Liquorix kernel uses BFQ
+"The Liquorix kernel is the long-standing effort for providing a "better distro kernel" optimized for desktop/multimedia/gaming workloads."
+------------
+report typo in comment: https://github.com/binary-manu/arch-ansible/blob/master/ansible/group_vars/all/00-default.yaml#L7
+
+actually, this fork is more up to date: https://github.com/jacoblambda/gentoo-role-base/commits/master
+--------
+Use augeas instead of ansible: (well, maybe not INSTEAD! puppet can use augeas, maybe ansible can too?)
+https://augeas.net/tour.html
+this uses github certificate, so add exception in firefox if using https.
+
+---------
+I think that no sync-ing is happening every 5(or 10) seconds as per fstab, because I've set in /etc/sysctl.d/10_delay_writes.conf :
+vm.dirty_writeback_centisecs=0
+#^ that's disabled!!!!!
+vm.dirty_expire_centisecs=1000
+#^ that should be 10sec
+otherwise, my sync-ing (aka running '~/bin/sync') wouldn't take 10 seconds to finish syncing, given than hours have passed since last sync.
+
+Currently both are set to 1500 ! else can lose data due to lack of sync, apparently! (03-03-2020)
+--------
+make the -9999 packages (git)fetch via portage --fetchonly just like it happens for SRC_URI, instead of fetching during src_unpack!!!! therefore it will work with userpriv ( and -userfetch ), else unpack thus git fetch is attempted as user 'portage' which will fail because owner is 'root' and want to keep it as such!
+--------
+make RAlt+arrows act the same way af LAlt+arrows, in console mode
+--------
+virtualbox crashes with kernel 5.10+ (not 5.9) unless CONFIG_DEBUG_SPINLOCK is =n
+see:
+https://www.virtualbox.org/ticket/20163#comment:1
+https://bugzilla.kernel.org/show_bug.cgi?id=211469
+https://bugs.gentoo.org/760102#c9
+--------
+something's broken in coreutils(even without any of my patches!) md5sum and sha256sum tested whereby it prepends a '\' slash before the checksum if the filename has slash in name(looks like double slash in bash, unless quoted!), like:
+# md5sum  ./etc/systemd/system/netctl@ethernet\\x2dstatic.service.d/profile.conf
+\0f508c33284068aac47cf3b45281ab2c  ./etc/systemd/system/netctl@ethernet\\x2dstatic.service.d/profile.conf
+
+ok so:
+$ touch \\
+$ md5sum \\
+\d41d8cd98f00b204e9800998ecf8427e  \\
+--------
+find out why ping on a 0.0.0.0 host from /etc/hosts like firefox.settings.services.mozilla.com will actually ping 127.0.0.1
+seems to be a ping feature
+--------
+find out why in Gentoo the current 'sync' script fails to sometimes find nvme device files during sync like:
+#
+logout
+syncing btrfs for root fs /
+
+real    0m0.029s
+user    0m0.000s
+sys     0m0.007s
+!! '/dev/sda' normal sync
+!! '/dev/sda' hardware sync (sdparm)
+    /dev/sda: ATA       WDC WD20EARS-00S  0A80
+!! '/dev/sdb' normal sync
+!! '/dev/sdb' hardware sync (sdparm)
+    /dev/sdb: ATA       Samsung SSD 840   DB6Q
+!! '/dev/sdc' normal sync
+!! '/dev/sdc' hardware sync (sdparm)
+    /dev/sdc: ATA       WDC  WUH721818AL  W120
+!! '/dev/sdd' normal sync
+!! '/dev/sdd' hardware sync (sdparm)
+    /dev/sdd: ATA       KINGSTON SA400S3  71F1
+!! '/dev/nvme0n1' normal sync
+!! '/dev/nvme0n1' hardware sync (sdparm)
+    /dev/nvme0n1: NVMe      INTEL MEMPEK1J01  K411
+!! '/dev/nvme0n1p1' normal sync
+!! '/dev/nvme0n1p1' hardware sync (sdparm)
+    /dev/nvme0n1p1: NVMe      INTEL MEMPEK1J01  K411
+!! '/dev/nvme1n1' normal sync
+!! '/dev/nvme1n1' hardware sync (sdparm)
+    /dev/nvme1n1: NVMe      INTEL MEMPEK1J01  K411
+!! '/dev/nvme1n1p1' normal sync
+!! '/dev/nvme1n1p1' hardware sync (sdparm)
+    /dev/nvme1n1p1: NVMe      INTEL MEMPEK1J01  K411
+!! '/dev/nvme2n1' normal sync
+!! '/dev/nvme2n1' hardware sync (sdparm)
+    /dev/nvme2n1: NVMe      INTEL MEMPEK1J01  K411
+!! '/dev/nvme2n1p1' normal sync
+/bin/sync: error opening '/dev/nvme2n1p1': No such file or directory
+!! '/dev/nvme2n1p1' hardware sync (sdparm)
+open error: /dev/nvme2n1p1 [read/write]: No such file or directory
+!! '/dev/nvme3n1' normal sync
+!! '/dev/nvme3n1' hardware sync (sdparm)
+    /dev/nvme3n1: NVMe      INTEL MEMPEK1J01  K411
+!! '/dev/nvme3n1p1' normal sync
+!! '/dev/nvme3n1p1' hardware sync (sdparm)
+    /dev/nvme3n1p1: NVMe      INTEL MEMPEK1J01  K411
+!! '/dev/nvme4n1' normal sync
+!! '/dev/nvme4n1' hardware sync (sdparm)
+    /dev/nvme4n1: NVMe      INTEL MEMPEK1J01  K411
+!! '/dev/nvme4n1p1' normal sync
+!! '/dev/nvme4n1p1' hardware sync (sdparm)
+    /dev/nvme4n1p1: NVMe      INTEL MEMPEK1J01  K411
+!! normal sync of all drives (in case we missed any)
+
+real    0m0.158s
+user    0m0.000s
+sys     0m0.005s
+
+
+yeah so when hardware sync-ing it, the whole other devices/namespace? is gone:
+the '15' is cmd 'ls -la /dev/nvme* |wc -l'
+[...]
+!! '/dev/nvme3n1' normal sync
+15
+!! '/dev/nvme3n1' hardware sync (sdparm)
+15
+    /dev/nvme3n1: NVMe      INTEL MEMPEK1J01  K411
+!! '/dev/nvme3n1p1' normal sync
+14
+/bin/sync: error opening '/dev/nvme3n1p1': No such file or directory
+!! '/dev/nvme3n1p1' hardware sync (sdparm)
+14
+open error: /dev/nvme3n1p1 [read/write]: No such file or directory
+!! '/dev/nvme4n1' normal sync
+14
+!! '/dev/nvme4n1' hardware sync (sdparm)
+14
+    /dev/nvme4n1: NVMe      INTEL MEMPEK1J01  K411
+!! '/dev/nvme4n1p1' normal sync
+14
+/bin/sync: error opening '/dev/nvme4n1p1': No such file or directory
+!! '/dev/nvme4n1p1' hardware sync (sdparm)
+14
+open error: /dev/nvme4n1p1 [read/write]: No such file or directory
+!! normal sync of all drives (in case we missed any)
+15
+
+so far I've edited the script to insert 'sleep 1' which mitigates the situation, works everytime, so far.
+--------
+in Gentoo, 'su -' then 'logout' will exit code '1' but 'echo a' first and it's '0', why?
+--------
+find all my 'grep' usages in scripts and see where I've used \+ or \anything (see man 1 grep) in non-extended more, and maybe even check the extended ones, to see that it actually does what I wanted eg. \+ in basic mode is like + in extended mode  ie. has special meaning.
+   Basic vs Extended Regular Expressions
+       In basic regular expressions the meta-characters ?, +, {, |, (, and ) lose their special meaning; instead  use
+       the backslashed versions \?, \+, \{, \|, \(, and \).
+--------
+--------
+--------
+--------
+--------
+
+// thanks <telemachus> on #vim freenode irc, for a filetype that's not .c or .cpp which ale would yell/error on:
+// vim: set ft=javascript:

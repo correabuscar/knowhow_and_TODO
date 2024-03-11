@@ -1,0 +1,156 @@
+------
+//~/.second.bashrc
+//#^ currently irrelevant!
+-------
+// notify overwrites fast notifs in log and thus only last one is kept
+// https://bugzilla.xfce.org/show_bug.cgi?id=15167
+// 
+// new le.patch for /home/user/build/1packages/4used/xfce4-notifyd-git
+// and PKGBUILD and *.install files are changed!
+// lookslike I don't have xfce4-notifyd on Gentoo with lxqt(didn't yet run lxqt/startx) placed the patch in anyway: /patches/portage/xfce-extra/xfce4-notifyd-0.4.4
+--------
+// changed file: /etc/X11/xorg.conf.d/91-keyboard.conf
+------
+// find out what bwrap uses for DNS because it's not my glibc! so dns queries are invisible
+// oh yes it does, but showdns doesn't have a capture for it! well ok, it's dmesg which doesn't catch it because of different namespace!
+// fixed by # --dev-bind /dev/log /dev/log  required so that the dns lookup requests can be logged (via openlog() and syslog() from glibc, to host's dmesg!), because --dev /dev  just uses a new one I guess.
+---
+// get patches from clearlinux into kernel:
+// https://github.com/clearlinux-pkgs/linux
+// write this into Gentoo's todo!
+--------
+
+
+//security now ads.cmd ads.lst sn.txt
+
+done:
+//add this env. var. in .bashrc or similar:
+//#Vagrant is currently configured to create VirtualBox synced folders with
+//#the `SharedFoldersEnableSymlinksCreate` option enabled. If the Vagrant       
+//#guest is not trusted, you may want to disable this option. For more
+//#information on this option, please refer to the VirtualBox manual:
+//#
+//#  https://www.virtualbox.org/manual/ch04.html#sharedfolders
+//#
+//#  This option can be disabled globally with an environment variable:
+//#
+//export VAGRANT_DISABLE_VBOXSYMLINKCREATE=1
+//#can't use alias if I want to return exit code of non-last command
+//#alias hexchat="echo \"executing as user 'hexchat'\"; xhost +SI:localuser:hexc  hat ; sudo -u hexchat -- hexchat ; ec=\"\$?\"; xhost -SI:localuser:hexchat; re  turn \"$ec\" "
+//function hexchat() {
+//  local uname="hexchat"
+//  local exename="hexchat"
+//  echo "Executing '$exename' as user '$uname'"
+//  xhost "+SI:localuser:$uname"
+//  sudo -u "$uname" -- "$exename" ; ec="$?"
+//  xhost "-SI:localuser:$uname"
+//  return "$ec"
+//}
+
+
+//~/bin/vbox script was updated to detect VBoxHeadless in 'ps'
+
+
+//a patch in each of:
+//actual patch: /home/user/build/1packages/4used/gst-plugins-bad
+//for debugging only: /home/user/build/1packages/4used/glib2
+//
+//for https://gitlab.freedesktop.org/gstreamer/gst-plugins-bad/issues/1194
+
+
+//this got changed:
+///home/user/bin/resymlink.d/02000_symlinks_from_relative_to_home
+//also you've to manually remove the symlink: ~/.gimp-2.8
+
+//there's a lv2 change I need to make(maybe only on archlinux? yes):
+//https://bugs.archlinux.org/task/65298
+//
+
+//got a patch updated: /home/user/build/1packages/3rarelyused/check-git
+
+
+//modified patch(es) in:
+///home/user/build/1packages/4used/glib2
+//and
+///home/user/build/1packages/4used/gst-plugins-bad
+//
+//
+//sn updated
+
+//updated:
+//~/bin/diggitsites
+
+
+--
+// report that in firefox, ctrl+t then ctrl+v a word like 'adjective'(no quotes) then press Enter, fast, will cause firefox to visit that site instead of going to the duckduckgo search page with that word which would happen if you don't press that Enter fast, ie. wait 1 sec.
+//already was: https://bugzilla.mozilla.org/show_bug.cgi?id=1597184
+---
+
+//a change in how ~/.second.bashrc applies the 'loadkeys' !! propagate this to i87k!
+---
+
+//fix hexchat func. in ~/.second.bashrc
+
+//vlc aliases add: --recursive expand  hmm no good, it's the default and does something else. But I added a comment to it!
+//then copy it to i87k!
+
+// ~/.config/gtk-3.0/ is NOT saved in q1q !!! and it uses gtk.css to change how xfce4-terminal works (at least!)
+//wait, it is saved, wtf! oh yeah it's in confHOME !
+-----
+//wasn't saved in q1q: ~/.gtkrc-2.0
+-----
+
+// new SN
+-----
+
+
+// failed attempt: /home/user/sandbox/bash/type
+-------
+// /etc/sysctl.d/01_no_dmesg_ratelimiting.conf
+// placed all /etc/sysctl.d/ into Gentoo now!
+-------
+// /etc/default/grub got modified GRUB_DISABLE_SUBMENU line
+-----
+//changed hexchat function in ~/.second.bashrc
+-------
+
+// changed ~/bin/fox script to run with bwrap/bubblewrap !
+// and hexchat in ~/.second.bashrc
+------
+// changed bash patch for 'type -P' to work! (used by mkinitcpio)
+------
+// todo: ~/bin/whatismyip
+-----
+// bin/def got updated, but still don't have that path on Gentoo (where I actually use 'dict' instead!)
+-----
+// changed/new:
+
+// doesn't matter : /etc/hosts  irc host
+// /home/user/.second.bashrc
+
+// fox
+//removed CONFIG_CPU_SUP_ZHAOXIN
+//on i87k, already was on Z575
+------
+// make these in batch:
+// # mkdir 1;sshfs -C -p 802 -v root@i7:/ 1
+// fusermount -u /root/1
+// done as: i7_fs  and alias cds
+-------
+// fox script got updated
+---------
+// -P0 should be -P1 in xargs!
+// changed:
+// ~/bin/fox
+// ~/bin/rsank/4copytogit
+// ~/bin/oldbin/vlc2cd
+// /home/user/bin/oldbin/vlc2cd1
+// /home/user/bin/oldbin/findgn
+------
+// ==> WARNING: Possibly missing firmware for module: aic94xx
+// ==> WARNING: Possibly missing firmware for module: wd719x
+// see 1TODO/newer/knowhow.wofl
+// nevermind! not needed!
+------
+// delete hexchat user on i87k: $ sudo userdel  --remove hexchat
+-----
