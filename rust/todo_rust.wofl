@@ -15,6 +15,12 @@
   \ but I meant here, my own local copy of rust compiler would do this check(s).
   * first save current process id somewhere before main() gets called
     \ TODO: what if #[no_main] 
+    * this assumes no alloc from rust can be done before main() gets called
+      \ TODO: is this a true assumption?
+      * what if from within non-rust happens?
+        \ for fork purposes this doesn't matter, we assume fork() can't be called before main()
+        * unless fork() can be called before main() somehow
+          \ TODO: see if it can or can't
   * on each alloc, check if current pid is different, then this is the forked process
     \ TODO: unless there's some way to change current pid, then this won't work to detect forks
   * so if in forked process doing an alloc, panic with proper msg (allocs no good in fork-ed process)
@@ -63,3 +69,8 @@
       \ maybe add that anyway? it can be trapped by atexit anyway
   * 
   * see if I've handled all cases by inspecting recent stuff I made in sandbox/rust/05*/
+
+* see if global allocator has all its funcs overriden
+  * like realloc, iirc I did see at some point, but it's not in my current way I override global allocator.
+
+
