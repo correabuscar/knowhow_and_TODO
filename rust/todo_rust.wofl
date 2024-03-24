@@ -1,3 +1,15 @@
+* using std::mem::zeroed() in cases where None is expected in structs would break programs assuming None is 0
+  * swap enum variants in the declaration of Option in rust itself
+    * recompile rust
+      * did it work? anything broke?
+      * try its tests
+        * find out how to run its tests
+    * use that rust for an example project
+      * try 'way2' comment (instead of 'way1') in this:
+        \ https://github.com/correabuscar/sandbox/commit/74f08d4ce78db24b436e7a265f29800eff7d66a3#diff-badd165b4a546a5cc9f5b275f3e718239123d96ee08e6a4dfbe0857f610b788fR80-R96
+      * did it work with that rust?
+        \ it should not have because 0(that mem::zeroed()) isn't None, 1 is None now
+
 * rust's global allocator could detect if any alloc was done while within a fork-ed process
   \ or worst case, my own custom allocator would do that in my own program.
   \ but I meant here, my own local copy of rust compiler would do this check(s).
