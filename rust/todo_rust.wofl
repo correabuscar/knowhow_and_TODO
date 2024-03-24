@@ -8,3 +8,46 @@
   * so if in forked process doing an alloc, panic with proper msg (allocs no good in fork-ed process)
     \ https://github.com/rust-lang/rust/pull/81858/files#diff-256489a401631296d6aebb6537ff78cde5cf3c0188004e6d2c479f7cbbc156d2R471-R472
 
+* use the same is it a fork detection mechanism within the panic rust_panic_with_hook() within rustc
+  * and thus only abort(in fork) instead of printing user-formatted msg or a stacktrace
+    \ https://github.com/rust-lang/rust/issues/122940#issuecomment-2016911490
+  * ensure other things like thread locals aren't used within the fork
+    \ not sure how, atm.
+    \ or maybe they are safe? https://github.com/rust-lang/rust/issues/122940#issuecomment-2016750887
+    \ see prev. comments which might've thought they aren't - investigate if they really are or aren't (still uncertain at this time)
+
+* cargo test doesn't properly catch tests that exit() or abort, etc.
+  \ only those that panic, but not double panic(which aborts) are caught
+  \ curiously (and I haven't explored why) --test-threads=1 mostly works (output of the name of the current test aka which test failed is still on screen after it fails, unlike --test-threads=2+)
+  \ I'm already using libtest's catch_unwind() and set_hook (panic handler) and atexit and now sig handler for abort and also for ctrl+c(todo)
+  \ current patch name which is a WIP(work in progress) is: cargo_test-threads_loses_output.patch
+  * ensure tests are caught in these cases too:
+    * test aborts (SIGABRT aka 6) - use sig handler
+    * test panics recursively until stack overflown
+    * test panics(once, twice, or recursively) or even aborts, in some weird places
+      * in global allocator
+      * in Drop (drop)
+      * in Display impl during a panic
+    * ensure combinations of the above are also tested against
+      \ or are they already covered in the above, hmm... can't think atm.
+    * ensure panics in the implementation of handling the above cases are still handled
+      \ like a panic while accessing some atomic or thread local whose purpose was to guard against recursive panics (for example)
+    * what happens if I've my own panic handler (aside from the one that libtest will have after I'm done with the above)
+      \ so from within my own test(s)
+      * i panic within my panic handler
+      * i return from it
+      * i abort from it
+      * some infinite panic recursion happens within my panic handler eg. in Display impl, or Drop, or global allocator
+    * what happens with those #[should_panic] tests
+    * what if panic is non-unwinding panic
+      \ unsure if it matters here, it's still a kind that abort()s, so should be handled similarily from an abort() kind of case that a panic can cause, above.
+    * see if I've handled all cases by inspecting recent stuff I made in sandbox/rust/05*/
+
+* make panic handling in rust_panic_with_hook() handle recursive panics and sig handlers for abort
+  * what to do if abort is intercepted by a sig handler that returns control
+    * does catch_unwind catch this?
+      \ well, it does only if I panic!() within the sigabrt handler
+    * if can't catch, then add another path to exit like exit(128+6)
+      \ maybe add that anyway? it can be trapped by atexit anyway
+  * 
+  * see if I've handled all cases by inspecting recent stuff I made in sandbox/rust/05*/
