@@ -1,0 +1,10 @@
+* rust's global allocator could detect if any alloc was done while within a fork-ed process
+  \ or worst case, my own custom allocator would do that in my own program.
+  \ but I meant here, my own local copy of rust compiler would do this check(s).
+  * first save current process id somewhere before main() gets called
+    \ TODO: what if #[no_main] 
+  * on each alloc, check if current pid is different, then this is the forked process
+    \ TODO: unless there's some way to change current pid, then this won't work to detect forks
+  * so if in forked process doing an alloc, panic with proper msg (allocs no good in fork-ed process)
+    \ https://github.com/rust-lang/rust/pull/81858/files#diff-256489a401631296d6aebb6537ff78cde5cf3c0188004e6d2c479f7cbbc156d2R471-R472
+
