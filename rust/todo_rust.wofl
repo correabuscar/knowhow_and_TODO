@@ -67,8 +67,15 @@
       \ well, it does only if I panic!() within the sigabrt handler
     * if can't catch, then add another path to exit like exit(128+6)
       \ maybe add that anyway? it can be trapped by atexit anyway
-  * 
+  * detect if in fork(aka child)
   * see if I've handled all cases by inspecting recent stuff I made in sandbox/rust/05*/
+    \ these, that is:
+    \ drwxr-xr-x 1 user user  52 22.03.2024 21:02 global_allocator/
+    \ drwxr-xr-x 1 user user 246 23.03.2024 18:41 tests/
+    \ drwxr-xr-x 1 user user  56 23.03.2024 20:35 signals/
+    \ drwxr-xr-x 1 user user  62 24.03.2024 14:37 abort/
+    \ drwxr-xr-x 1 user user 126 25.03.2024 01:48 thread_local/
+    \ drwxr-xr-x 1 user user  98 25.03.2024 02:00 fork/
 
 * see if global allocator has all its funcs overriden
   * like realloc, iirc I did see at some point, but it's not in my current way I override global allocator.
