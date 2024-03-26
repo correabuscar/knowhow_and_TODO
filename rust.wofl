@@ -9,6 +9,16 @@
   * Rust is a statically typed language, which means that it must know the types of all variables at compile time.
   * Rust’s naming convention for constants is to use all uppercase with underscores between words.
   * The variables that a closure captures by move are dropped in an unspecified order.
+  * the "_start" that executes main() in Rust is in:
+    \ well it's not actually THE _start ...
+    \ "// NOTE: this is not guaranteed to run, for example when Rust code is called externally."
+    \ in latest rust is here: https://github.com/rust-lang/rust/blob/b13a71a2e77f4625d1a2b8a5b9488414686ebca9/library/std/src/rt.rs#L125-L172
+    \ which calls init before main, in: https://github.com/rust-lang/rust/blob/b13a71a2e77f4625d1a2b8a5b9488414686ebca9/library/std/src/rt.rs#L95
+    \ in old rust:
+    \ https://github.com/rust-lang/rust/blob/bb4d1491466d8239a7a5fd68bd605e3276e97afb/src/libstd/rt.rs#L32-L73
+    \ thanks for the link to https://os.phil-opp.com/freestanding-rust-binary/
+    \ "In a typical Rust binary that links the standard library, execution starts in a C runtime library called crt0 (“C runtime zero”), which sets up the environment for a C application. This includes creating a stack and placing the arguments in the right registers. The C runtime then invokes the entry point of the Rust runtime, which is marked by the start language item. Rust only has a very minimal runtime, which takes care of some small things such as setting up stack overflow guards or printing a backtrace on panic. The runtime then finally calls the main function."
+  * 
 
 * ------------------ Things to do when coding in Rust:
   * consider using this lint that can set a threshold when detecting moves/copies, catch that Copy trait maybe?
