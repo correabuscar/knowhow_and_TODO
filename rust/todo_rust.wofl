@@ -94,4 +94,5 @@
   * compare with the ones that crc computator generated
   * if all equal, bam, good-"enough" memory
 
+* write in knowhow.wofl how to run the cache incoherency test, if it eventually works out
 
