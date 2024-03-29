@@ -1,3 +1,27 @@
+* to get any aarch64 image to work with qemu-system-aarch64
+  \ thanks to eirikb's gist qemu-arch-linux-raspi2.sh which is: https://gist.githubusercontent.com/eirikb/5bbf85d935c512827f859b614799de94/raw/48e1e54cdc603f9cfb2be3c1a966158aad005012/qemu-arch-linux-raspi2.sh
+  * you have to pass both -kernel and -dtb args
+    \ without them it just loops with 100% or more cpu usage on a black screen
+    \ if you use "-d int" you get to see Undefined Instructions
+    * kernel and dtb are found in the boot partition of the image
+      \ u can mount (from his gist) like this:
+      \ LOOPS=$(sudo kpartx -av "$img" | grep -Po 'loop.p.')
+      \ that makes /dev/mapper/loop0p{1,2} devices for each partition in the img file
+      \ BOOT=$(echo "$LOOPS" | head -n1)
+      \ this will be loop0p1
+      \ ROOT=$(echo "$LOOPS" | tail -n1)
+      \ this will be loop0p2
+      \ sudo mount /dev/mapper/"$BOOT" boot
+      \ sudo mount /dev/mapper/"$ROOT" root
+      \ extract the needed files out of it in a dir, ie. all files, don't keep permissions.
+      \ there you should have both kernel8.img and bcm2710-rpi-3-b.dtb for -machine raspi3b (aka -M raspi3b)
+  * arch linux arm won't see the keyboard for some reason even though its uboot will
+    \ wasted too much time failing to fix it, ended up using dietpi image instead which gives login prompt on serial0 too
+  * example command:
+    \ $ qemu-system-aarch64 -M raspi3b -kernel b/kernel8.img -drive "format=raw,file=$img" -append "console=ttyAMA0 root=/dev/mmcblk0p2 rw rootwait" -dtb b/bcm2710-rpi-3-b.dtb -device usb-kbd -netdev user,id=net0,hostfwd=tcp::2222-:22 -device usb-net,netdev=net0
+    \ where img="2024-03-12-raspios-bullseye-arm64-lite.img"
+
+
 * incorrect udp checkums ? (seen with tcpdump) with software from within virtualbox
   \ fix: ethtool --offload eth0 rx off tx off ; ethtool -K eth0 gso off
   \ ^ apparently this works even when you get networking freezes right after you get 'Detected Tx Unit Hang' within virtualbox. - either that, or it just got better by itself. (but for example you couldn't even navigate in make nconfig due to the network delay/lags)
