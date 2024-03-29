@@ -16,10 +16,18 @@
       \ extract the needed files out of it in a dir, ie. all files, don't keep permissions.
       \ there you should have both kernel8.img and bcm2710-rpi-3-b.dtb for -machine raspi3b (aka -M raspi3b)
   * arch linux arm won't see the keyboard for some reason even though its uboot will
-    \ wasted too much time failing to fix it, ended up using dietpi image instead which gives login prompt on serial0 too
+    \ wasted too much time failing to fix it, ended up using raspberrypi[1] image instead which gives login prompt on serial0 too
+    \ [1] https://www.raspberrypi.com/software/operating-systems/#raspberry-pi-os-64-bit
+    * for that [1] image, it's not enough to just use "-device usb-kbd" (or not speficy it)
+      \ it needs the whole thing:
+      \ "device usb-kbd -netdev user,id=net0,hostfwd=tcp::2222-:22 -device usb-net,netdev=net0"
+      \ or else the keyboard has no effect at login in the *-fb qemu window tab! which is kinda odd.
+      \ this [1] will ask you to set a user+password on *-fb tab of qemu, I dno the root password but 'sudo' is passwordless after setting up that user, so u can change root's password
   * example command:
     \ $ qemu-system-aarch64 -M raspi3b -kernel b/kernel8.img -drive "format=raw,file=$img" -append "console=ttyAMA0 root=/dev/mmcblk0p2 rw rootwait" -dtb b/bcm2710-rpi-3-b.dtb -device usb-kbd -netdev user,id=net0,hostfwd=tcp::2222-:22 -device usb-net,netdev=net0
     \ where img="2024-03-12-raspios-bullseye-arm64-lite.img"
+    \ this implies "-display gtk" arg and that you'll be using serial0 tab in that qemu window (View->Show tabs, first)
+    \ didn't try "-serial stdio" at this time, but keyboard works in both "serial0" and in "bcm2835-fb" named tabs.
 
 
 * incorrect udp checkums ? (seen with tcpdump) with software from within virtualbox
