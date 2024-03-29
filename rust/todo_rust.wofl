@@ -80,4 +80,18 @@
 * see if global allocator has all its funcs overriden
   * like realloc, iirc I did see at some point, but it's not in my current way I override global allocator.
 
+* for memtesting purposes of a specific memory area
+  \ without keeping a copy anywhere of the initial data(aka randoms) that you generate
+  \ but still assuming that the stack memory isn't bad memory tho.
+  \ but I'm unsure, atm, if streaming(in rust) means heap allocations are happening?
+  * get a stream of randoms for X size
+  * pass stream thru a crc computator
+    * one pass thru it will compute 8 crcs, for each byte ror-ed from 0 to 7
+      \ without needing to keep the whole input in a buffer
+      \ one byte at a time, or maybe a minimum is needed, unsure.
+  * write that stream to an area of memory of X size
+  * compute 8 checksums of the area, each time ror-ing each byte from 0 to 7
+  * compare with the ones that crc computator generated
+  * if all equal, bam, good-"enough" memory
+
 
