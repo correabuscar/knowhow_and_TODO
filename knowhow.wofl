@@ -24,7 +24,7 @@
     \ Kernel version: 6.1
     \ Debian version: 11 (bullseye)
     \ Size: 309MB
-    \ sha256 58a3ec57402c86332e67789a6b8f149aeeb4e7bb0a16c9388a66ea6e07012e45
+    \ sha256 97ecb10a79acd60e96e2a2a29312a351306acdbf6493888bf20e90f5ff666bf8
     * for that [1] image, it's not enough to just use "-device usb-kbd" (or not speficy it)
       \ it needs the whole thing:
       \ "-device usb-kbd -netdev user,id=net0,hostfwd=tcp::2222-:22 -device usb-net,netdev=net0"
