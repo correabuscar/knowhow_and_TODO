@@ -18,6 +18,13 @@
   * arch linux arm won't see the keyboard for some reason even though its uboot will
     \ wasted too much time failing to fix it, ended up using raspberrypi[1] image instead which gives login prompt on serial0 too
     \ [1] https://www.raspberrypi.com/software/operating-systems/#raspberry-pi-os-64-bit
+    \ the one from "Raspberry Pi OS (Legacy, 64-bit)" -> "Raspberry Pi OS (Legacy) Lite"
+    \ Release date: March 12th 2024
+    \ System: 64-bit
+    \ Kernel version: 6.1
+    \ Debian version: 11 (bullseye)
+    \ Size: 309MB
+    \ sha256 58a3ec57402c86332e67789a6b8f149aeeb4e7bb0a16c9388a66ea6e07012e45
     * for that [1] image, it's not enough to just use "-device usb-kbd" (or not speficy it)
       \ it needs the whole thing:
       \ "device usb-kbd -netdev user,id=net0,hostfwd=tcp::2222-:22 -device usb-net,netdev=net0"
