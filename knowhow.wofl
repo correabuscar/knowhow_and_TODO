@@ -27,7 +27,7 @@
     \ sha256 58a3ec57402c86332e67789a6b8f149aeeb4e7bb0a16c9388a66ea6e07012e45
     * for that [1] image, it's not enough to just use "-device usb-kbd" (or not speficy it)
       \ it needs the whole thing:
-      \ "device usb-kbd -netdev user,id=net0,hostfwd=tcp::2222-:22 -device usb-net,netdev=net0"
+      \ "-device usb-kbd -netdev user,id=net0,hostfwd=tcp::2222-:22 -device usb-net,netdev=net0"
       \ or else the keyboard has no effect at login in the *-fb qemu window tab! which is kinda odd.
       \ this [1] will ask you to set a user+password on *-fb tab of qemu, I dno the root password but 'sudo' is passwordless after setting up that user, so u can change root's password
   * example command:
