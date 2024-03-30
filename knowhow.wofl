@@ -51,12 +51,12 @@
   * the rustup way:
     * rustup default nightly
     * rustup target add aarch64-unknown-linux-musl
-  * non-rustup way:
+  * non-rustup way: (doesn't work)
     \ if you don't have rust std lib for that target, buf it u used rustup u should
     \ currently won't work on Gentoo, unable to built such a rust: https://bugs.gentoo.org/679878
     \ but it will compile ur std lib for the arches u have built rust with.
     \ you won't have the crosscompile/linker tho, u can try crossdev but it might fail (actually with musl it works, but with gnu target it didn't)
-    * on Gentoo
+    * on Gentoo (doesn't work)
       * do this with crossdev
         * install crossdev:
           \ emerge --ask sys-devel/crossdev -v
@@ -65,6 +65,14 @@
         * crossdev --target aarch64-unknown-linux-musl
           \ this gets you the linker that rust needs to finish ur program
     * cargo build -Z build-std
+      \ This seems to compile ok on Gentoo, but it build dynamic executable, which won't run on raspi3b in qemu
+      \ On nixos it fails to compile due to undefined reference to `__extenddftf2' and many more
+      * fail on raspi3b (`qemu -machine raspi3b`)
+        \ user@raspberrypi:~$ ldd /3/cache_incoherence2 
+        \ /3/cache_incoherence2: error while loading shared libraries: /lib/aarch64-linux-gnu/libc.so: invalid ELF header
+        \ user@raspberrypi:~$ file  /3/cache_incoherence2 
+        \ /3/cache_incoherence2: ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-musl-aarch64.so.1, with debug_info, not stripped
+
 
 * run rust program that u compiled for aarch64, on qemu
   * basically use the above thing to get aarch64 in qemu
