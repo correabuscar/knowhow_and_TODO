@@ -87,6 +87,12 @@
     \ this will be loop0p2
     \ sudo mount /dev/mapper/"$BOOT" boot
     \ sudo mount /dev/mapper/"$ROOT" root
+    * another way, without kpartx, is:
+      \ fdisk -l file.img
+      \ look at each partition's Start, should be like 8192 for boot, and 532480 for root
+      \ then do something like this:
+      \ sudo mount -o loop,offset=$(($start_sector * 512)) 2024-03-12-raspios-bullseye-arm64-lite.img ./img
+      \ where 'img' is the current dir to mount to.
   * umount it
   * run qemu
   * run ur rust program in qemu
