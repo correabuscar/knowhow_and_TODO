@@ -36,6 +36,53 @@
     \ this implies "-display gtk" arg and that you'll be using serial0 tab in that qemu window (View->Show tabs, first)
     \ didn't try "-serial stdio" at this time, but keyboard works in both "serial0" and in "bcm2835-fb" named tabs.
 
+* to crosscompile rust program
+  \ ie. compile ur rust program on x86_64 so that it works to execute it on aarch64
+  * get nixos in a vm
+  * get into your project dir
+  * see how I did it in sandbox/rust/05_sandbox/atomic/cache_incoherence/
+    \ if has a *.nix file that you'd nix-shell into to have access to linker aarch64-unknown-linux-musl-gcc which is needed for linking by cargo
+  * basically rust needs linker aarch64-unknown-linux-musl-gcc and the target must be aarch64-unknown-linux-musl because u can't statically link glibc in the rust exe of ur project
+    \ so u can't use this aarch64-unknown-linux-gnu because your aarch64 likely doesn't have glibc that your exe's expecting (because your exe's then not statically linked it's dynamically linked against glibc)
+    \ [target.aarch64-unknown-linux-musl]
+    \ linker = "aarch64-unknown-linux-musl-gcc"
+    \ once that's set eg. in ./.cargo/config
+    \ linking phase of 'cargo build --target=aarch64-unknown-linux-musl  should be successful
+  * the rustup way:
+    * rustup default nightly
+    * rustup target add aarch64-unknown-linux-musl
+  * non-rustup way:
+    \ if you don't have rust std lib for that target, buf it u used rustup u should
+    \ currently won't work on Gentoo, unable to built such a rust: https://bugs.gentoo.org/679878
+    \ but it will compile ur std lib for the arches u have built rust with.
+    \ you won't have the crosscompile/linker tho, u can try crossdev but it might fail (actually with musl it works, but with gnu target it didn't)
+    * on Gentoo
+      * do this with crossdev
+        * install crossdev:
+          \ emerge --ask sys-devel/crossdev -v
+        * ensure u have a dedicated gentoo overlay/repo for crossdev
+          \ steps here: https://wiki.gentoo.org/wiki/Crossdev
+        * crossdev --target aarch64-unknown-linux-musl
+          \ this gets you the linker that rust needs to finish ur program
+    * cargo build -Z build-std
+
+* run rust program that u compiled for aarch64, on qemu
+  * basically use the above thing to get aarch64 in qemu
+  * make sure it's not running in qemu before mounting image on host
+  * mount the .img on host like
+    \ you only need root, to copy ur rust program into root somewhere
+    \ LOOPS=$(sudo kpartx -av "$img" | grep -Po 'loop.p.')
+    \ that makes /dev/mapper/loop0p{1,2} devices for each partition in the img file
+    \ BOOT=$(echo "$LOOPS" | head -n1)
+    \ this will be loop0p1
+    \ ROOT=$(echo "$LOOPS" | tail -n1)
+    \ this will be loop0p2
+    \ sudo mount /dev/mapper/"$BOOT" boot
+    \ sudo mount /dev/mapper/"$ROOT" root
+  * umount it
+  * run qemu
+  * run ur rust program in qemu
+
 
 * incorrect udp checkums ? (seen with tcpdump) with software from within virtualbox
   \ fix: ethtool --offload eth0 rx off tx off ; ethtool -K eth0 gso off
