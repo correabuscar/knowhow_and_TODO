@@ -2005,4 +2005,10 @@
   \ export SIMPLE_BACKUP_SUFFIX=".before_patch_was_called_as_root" #this is used by 'patch' instead of ".orig"
   \ can use this to change from .orig extension to ^ that one.
 
+* on gentoo, to avoid double patching and failing via /etc/portage/patches/
+  * if you had ccache-4.9.1 and now you have ccache-4.9.1-r1
+    \ make sure the patch is using the same name in both dirs
+    \ this way only the -r1 will be applied
+    \ otherwise portage thinks it's two different patches and applies them from -r1 then from the other dir, then from just ccache/ dir
+    \ see man 5 portage
 
