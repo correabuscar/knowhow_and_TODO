@@ -2012,3 +2012,7 @@
     \ otherwise portage thinks it's two different patches and applies them from -r1 then from the other dir, then from just ccache/ dir
     \ see man 5 portage
 
+* on gentoo, up to two interrupted/aborted emerges can be resumed aka continued
+  \ via emerge --resume
+
+
