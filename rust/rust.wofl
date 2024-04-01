@@ -18,7 +18,8 @@
     \ https://github.com/rust-lang/rust/blob/bb4d1491466d8239a7a5fd68bd605e3276e97afb/src/libstd/rt.rs#L32-L73
     \ thanks for the link to https://os.phil-opp.com/freestanding-rust-binary/
     \ "In a typical Rust binary that links the standard library, execution starts in a C runtime library called crt0 (“C runtime zero”), which sets up the environment for a C application. This includes creating a stack and placing the arguments in the right registers. The C runtime then invokes the entry point of the Rust runtime, which is marked by the start language item. Rust only has a very minimal runtime, which takes care of some small things such as setting up stack overflow guards or printing a backtrace on panic. The runtime then finally calls the main function."
-  * 
+  *  "References are Copy, meaning that when you "move" them, the original still exists, just like with an integer or boolean."
+    \ src: https://marabos.nl/atomics/basics.html#leaking
 
 * ------------------ Things to do when coding in Rust:
   * consider using this lint that can set a threshold when detecting moves/copies, catch that Copy trait maybe?
@@ -26,4 +27,5 @@
     \ https://github.com/rust-lang/rust/pull/83519/files#diff-f479f8f1d2ed5f848531b050c5df0df73129fc002048c7090b152dc66f58aa10R2894
     \ and here:
     \ https://github.com/rust-lang/rust/pull/83519/files#diff-d62a3f464bf92f349dd535e40421d8f355f00e806e68cf57106f5a638a95e833R1
+
 
