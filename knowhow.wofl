@@ -2015,4 +2015,6 @@
 * on gentoo, up to two interrupted/aborted emerges can be resumed aka continued
   \ via emerge --resume
 
+* terminal escape codes exploit or stuff, to be aware of
+  \ https://dgl.cx/2023/09/ansi-terminal-security
 
