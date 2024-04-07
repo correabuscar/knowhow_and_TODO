@@ -33,6 +33,19 @@
     \ not sure how, atm.
     \ or maybe they are safe? https://github.com/rust-lang/rust/issues/122940#issuecomment-2016750887
     \ see prev. comments which might've thought they aren't - investigate if they really are or aren't (still uncertain at this time)
+  * make sure that println/eprintln in fork doesn't keep anything locked(from parent) so that the fork can actually print instead of hang waiting for unlock! (may have to use pthread_atfork ?)
+    \ note: might not be able to 'unlock' if it's not safe to do after fork, TODO: check if can unlock a mutex after fork, this seems to suggest it can't?: https://github.com/rust-lang/rust/issues/64718#issuecomment-1346099608
+    \ it seems to be just forgotten insted of unlocked in forked process? eg. https://github.com/rust-lang/rust/pull/82949/files#diff-7015a38ee6056bbfa832b33281ffeaad5531c4dbfaff60ddfce0934475e040f4L45-R56
+    * read in 'man pthread_atfork':
+      \ When fork(2) is called in a multithreaded process, only the calling thread is duplicated in the child process.
+      \ The original intention of pthread_atfork() was to allow the child process  to  be  returned  to  a  consistent
+      \ state.   For example, at the time of the call to fork(2), other threads may have locked mutexes that are visi‐
+      \ ble in the user-space memory duplicated in the child.  Such mutexes would never be unlocked, since the threads
+      \ that placed the locks are not duplicated in the child.  The intent of pthread_atfork() was to provide a mecha‐
+      \ nism whereby the application (or a library) could ensure that mutexes and other process and thread state would
+      \ be restored to a consistent state.  In practice, this task is generally too difficult to be practicable.
+      * so if some thread in main is in the process of printing, when another thead of main is forking(via libc::fork() I mean), that fork might hold a lock on the stdout/stderr handle(or wut, must check) and thus a print from forked process would lockup waiting, unless rust is already fixing this, but I didn't seem them use pthread_atfork, tho it's mentioned here(but im not really sure what that's about, yet): https://github.com/rust-lang/rust/blob/fc1a4c5cc9308c4b5980c64a73fd344a59c10601/library/std/src/sys/pal/unix/process/process_unix.rs#L285
+        \ well looks like there's a way pre_exec() that rust code runs in the child(aka fork) after a fork: https://github.com/rust-lang/rust/pull/82949/files#diff-cc26cc662ae1f48adfa5a89ae2ad13d76ce3c5153da16d812ad650a56c45459fR61-R62
 
 * cargo test doesn't properly catch tests that exit() or abort, etc.
   \ only those that panic, but not double panic(which aborts) are caught
@@ -94,5 +107,6 @@
   * compare with the ones that crc computator generated
   * if all equal, bam, good-"enough" memory
 
-* write in knowhow.wofl how to run the cache incoherency test, if it eventually works out
+- write in knowhow.wofl how to run the cache incoherency test, if it eventually works out
+  \ I couldn't make it work.
 
