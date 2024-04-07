@@ -4154,7 +4154,7 @@
       \ for /etc/sysctl.d/50-coredump.conf
     - emerge -nav x11-misc/rss-glx
       \ screensavers, also installs xscreensaver
-      \ however, this overrides lxqt running xdg-screensaver which I had set up to run alock via ~/bin/binprio/
+      \ however, this overrides lxqt running xdg-screensaver which I had set up to run alock via ~/bin/binprio/ which runs /home/user/bin/xflock4 which is bash that runs alock and now some monoff parts(that don't re-run xflock4)
       \ so let's not use this for now!
     * emerge -nav dev-python/pyyaml
       \ needed by vim clang integration (says so emerge msg of clang, referring to run-clang-tidy.py of /usr/lib/llvm/12/share/clang/ requiring it)
