@@ -110,3 +110,26 @@
 - write in knowhow.wofl how to run the cache incoherency test, if it eventually works out
   \ I couldn't make it work.
 
+* see those ~/sandbox/rust/05_sandbox/reed-solomon/
+  * what happens if the reed solomon codes are lost, like a bit or byte of them ?!
+
+* fix security vulns in https://github.com/correabuscar/sandbox/security/dependabot
+  * must replace failure crate with something else and thus fix the code to use that new thing.
+    \ Anyhow is a good replacement for failure::Error.
+    \ https://github.com/dtolnay/anyhow
+    \ thiserror is a good, near drop-in  replacement for #[derive(Fail)].
+    \ https://github.com/dtolnay/thiserror
+
+  * ncurses crate issues
+    \ I don't remember why I couldn't update it
+  * libgit2-sys
+  * thread_local
+  * regex
+  * lock_api
+  * time
+  * git2
+  * owning_ref
+  * atty
+  * remove_dir_all
+
+
