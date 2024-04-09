@@ -38,6 +38,7 @@
 
 * to crosscompile rust program
   \ ie. compile ur rust program on x86_64 so that it works to execute it on aarch64
+  \ WARNING: this way doesn't work for Windows too (ie. --target=x86_64-pc-windows-gnu ), must use different *.nix for nix-shell (or do it globally), see how I did it in: /home/user/sandbox/rust/05_sandbox/fork/pthread_atfork_try2 aka https://github.com/correabuscar/sandbox/rust/05_sandbox/fork/pthread_atfork_try2 but basically you need these 2 packages globally(if not in nix-shell+set the PATH): pkgs.pkgsCross.mingwW64.stdenv.cc pkgs.pkgsCross.mingwW64.windows.pthreads and if u wanna run it you need this pacakge: (pkgs.wine.override { wineBuild = "wine64"; })
   * get nixos in a vm
   * get into your project dir
   * see how I did it in sandbox/rust/05_sandbox/atomic/cache_incoherence/
