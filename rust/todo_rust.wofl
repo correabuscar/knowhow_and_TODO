@@ -114,14 +114,18 @@
   * what happens if the reed solomon codes are lost, like a bit or byte of them ?!
 
 * fix security vulns in https://github.com/correabuscar/sandbox/security/dependabot
-  * must replace failure crate with something else and thus fix the code to use that new thing.
+  - must replace failure crate with something else and thus fix the code to use that new thing.
     \ Anyhow is a good replacement for failure::Error.
     \ https://github.com/dtolnay/anyhow
     \ thiserror is a good, near drop-in  replacement for #[derive(Fail)].
     \ https://github.com/dtolnay/thiserror
+    \ done: used anyhow! https://github.com/correabuscar/sandbox/commit/9505310157535f5595a90310448f4210f7e38ab4 https://github.com/correabuscar/sandbox/commit/d4263124911ef97efaf4a04e957a22773e497d1d
 
-  * ncurses crate issues
-    \ I don't remember why I couldn't update it
+  - ncurses crate issues
+    \ solved in my use case by locally patching them as mentioned below:
+    * cursive depends on ncurses-rs
+      \ both need patches to get updated from the vulnerable ncurses-rs
+      \ https://github.com/jeaye/ncurses-rs/pull/201#issuecomment-2045636905
   * libgit2-sys
   * thread_local
   * regex
