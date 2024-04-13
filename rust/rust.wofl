@@ -27,5 +27,8 @@
     \ https://github.com/rust-lang/rust/pull/83519/files#diff-f479f8f1d2ed5f848531b050c5df0df73129fc002048c7090b152dc66f58aa10R2894
     \ and here:
     \ https://github.com/rust-lang/rust/pull/83519/files#diff-d62a3f464bf92f349dd535e40421d8f355f00e806e68cf57106f5a638a95e833R1
-
+  * don't manually impl any methods
+    * make a trait instead
+    * impl that trait (trait extension)
+    * this way those using our type can override the methods and call the previous ones
 
