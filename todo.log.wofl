@@ -2440,6 +2440,9 @@ find all my 'grep' usages in scripts and see where I've used \+ or \anything (se
        In basic regular expressions the meta-characters ?, +, {, |, (, and ) lose their special meaning; instead  use
        the backslashed versions \?, \+, \{, \|, \(, and \).
 --------
+on gentoo, probably during compilation of virtualbox 7.0.14, seen this on 'dmesg' after.
+[ 3015.835130] process 'release/obj/USBIdDatabaseGenerator/USBIdDatabaseGenerator' started with executable stack
+
 --------
 --------
 --------
