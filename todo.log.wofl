@@ -2444,6 +2444,9 @@ on gentoo, probably during compilation of virtualbox 7.0.14, seen this on 'dmesg
 [ 3015.835130] process 'release/obj/USBIdDatabaseGenerator/USBIdDatabaseGenerator' started with executable stack
 
 --------
+see if virtualbox is sending the checkCount value too when asking for updates from server, because this would be like a cookie or unique (enough) number, to track each client, unless a failed check causes it to increment it.
+        <Host enabled="false" channel="1" checkFreqSec="86400" repoUrl="https://update.virtualbox.org" checkCount="0"/>
+^ from within ~/.Virtualbox/VirtualBox.xml
 --------
 --------
 --------
