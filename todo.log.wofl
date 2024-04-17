@@ -2448,6 +2448,7 @@ see if virtualbox is sending the checkCount value too when asking for updates fr
         <Host enabled="false" channel="1" checkFreqSec="86400" repoUrl="https://update.virtualbox.org" checkCount="0"/>
 ^ from within ~/.Virtualbox/VirtualBox.xml
 --------
+find a shell written in rust to replace bash with, maybe: app-shells/nushell-0.91.0, or fish or shrs - check later.
 --------
 --------
 
