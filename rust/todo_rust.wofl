@@ -136,4 +136,20 @@
   * atty
   * remove_dir_all
 
+* retry/abort in case any opration in rust would panic
+  * so instead of panic, the program would wait for use to rectify the problem
+    \ at program start a 0 byte file would be made in /tmp/somename
+    \ if a situation happens that can be retried(in theory) in rust code,
+    \ there would be a prompt or something notifying of the problem and,
+    \ asking use to either delete that /tmp file to abort and thus panic as if this whole feature didn't exist.
+    \ or rename that file to something like retry or /tmp/somename.retry if the file is /tmp/somename.failure
+    \ maybe its contents can be filled with the problem, so renaming it to /tmp/somename.retry would cause the code
+    \ to retry;
+    \ say if something's about to panic due to not enough memory (and assuming this whole feature doesn't require any,
+    \ or it had it preallocated), then this thing with the file telling the prog to retry/abort might work.
+    \ it can be abort as in SIGABRT, or panic to panic!() there, or retry to retry the operation, or something else too?
+    \ maybe a prompt could be telling user to check file/contents for the problem, but not actually prompt for input because it might mess up the program, even outputting anything on screen/terminal might not work, so this file thingy would be a rudimentary way to do that.
+    \ actually might have a thread spawned since start which would bring this up, thus not needing a file, because presumably thread can do whatever (menu, notification) to inform user of problem(s) and allow a retry/abort/panic to be done.
+    \ but this means the code that failed(from another thread) needs to can be notified by this monitoring thread; or it can actually use the file method to get notified; however i imagine if multiple threads are in failure mode then must be using different files or something.
+    \ just an idea.
 
