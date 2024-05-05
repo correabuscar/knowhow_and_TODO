@@ -113,7 +113,16 @@
 * see those ~/sandbox/rust/05_sandbox/reed-solomon/
   * what happens if the reed solomon codes are lost, like a bit or byte of them ?!
 
-* fix security vulns in https://github.com/correabuscar/sandbox/security/dependabot
+* fix 'cargo test' for tests that abort/exit
+  \ currently WIP, i already had this as TODO above!
+  * this needs ability to detect fork
+    \ WIP
+    * this needs multipath backoff for the panic handling code
+      \ to avoid infinite recursion when is_fork() is used in panic handling code
+  * needs ability to not alloc while doing that multipath backoff aka recursion detection and avoiding same path that caused the recursion
+    \ WIP
+
+- fix security vulns in https://github.com/correabuscar/sandbox/security/dependabot
   - must replace failure crate with something else and thus fix the code to use that new thing.
     \ Anyhow is a good replacement for failure::Error.
     \ https://github.com/dtolnay/anyhow
@@ -136,7 +145,7 @@
   * atty
   * remove_dir_all
 
-* retry/abort in case any opration in rust would panic
+* retry/abort in case any operation in rust would panic
   * so instead of panic, the program would wait for use to rectify the problem
     \ at program start a 0 byte file would be made in /tmp/somename
     \ if a situation happens that can be retried(in theory) in rust code,
@@ -152,4 +161,16 @@
     \ actually might have a thread spawned since start which would bring this up, thus not needing a file, because presumably thread can do whatever (menu, notification) to inform user of problem(s) and allow a retry/abort/panic to be done.
     \ but this means the code that failed(from another thread) needs to can be notified by this monitoring thread; or it can actually use the file method to get notified; however i imagine if multiple threads are in failure mode then must be using different files or something.
     \ just an idea.
+
+* do a macro like the multipath backoff one, to detect when (re)allocation(s) happened to the code within it
+  \ so it would be storing the location in source code(via macros like file!())
+  \ then return a guard internally which would go out of scope when macro is finished
+  \ while guard is active, the global allocator which we already installed(somehow),
+  \ will check all active locations and if any are active, we'd notify(well increment their counter)
+  \ when guard gets dropped we check if counter>0 then we know if allocations happened.
+  \ sure maybe even add (somehow without heap? or by disabling our code temporarily, ie. no re-entry)
+  \ the backtrace(s) of where allocation happened, during the live guard, and those are reported when guard is dropped.
+  * so name it like assert_this_does_not_allocate!(...);
+    \ and "..." can be expression or block.
+
 
