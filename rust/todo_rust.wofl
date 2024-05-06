@@ -173,4 +173,7 @@
   * so name it like assert_this_does_not_allocate!(...);
     \ and "..." can be expression or block.
 
+* find out if I've used AtomicU64 and replace with AtomicUsize
+  \ because "AtomicUsize is available on all platforms but AtomicU64 isn't." -src:https://github.com/rust-lang/rust/issues/67939#issuecomment-800306412
+
 
