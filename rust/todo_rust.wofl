@@ -175,5 +175,29 @@
 
 * find out if I've used AtomicU64 and replace with AtomicUsize
   \ because "AtomicUsize is available on all platforms but AtomicU64 isn't." -src:https://github.com/rust-lang/rust/issues/67939#issuecomment-800306412
+  \ well, hmm, i kinda need AtomicU64 for https://doc.rust-lang.org/std/thread/struct.ThreadId.html#method.as_u64
+
+* look into static_init crate as it does mention which things do alloc
+  \ https://gitlab.com/okannen/static_init
+  * make sure my use of atexit or on_exit doesn't do alloc
+    \ or replace them somehow, if they do
+  * make sure my use of pthread stuff don't alloc when they shouldn't
+    \ like if it's a forked process
+    \ or if it's inside panic handler code and it shouldn't alloc(i forget why it shouldn't atm)
+    \ or if it's inside global allocator code? (like if (re)alloc panicked, are we re-allocating in the panic handler?! we shouldn't)
 
 
+* get back to these:
+  * browser addons, save on github?
+    \ /home/user/SOURCE/browser.stuff/both
+  * /home/user/sandbox/rust/05_sandbox/fork/forking_test4
+    \ this was testing how fork detection works, which is what i modified in rustc source
+    * library/std/src/panicking.rs
+      \ must make sure the panic handling code isn't recursing due to recursive panics!
+      * /home/user/sandbox/rust/05_sandbox/recursive_multipath/multipath_backoff4_mixed_both
+        \ this is the strategy to avoid infinite recursing due to recursive panics
+        * /home/user/sandbox/rust/05_sandbox/thread_local/no_heap_allocations_thread_local
+          \ need no heap thread_local to keep track of whether recursion happened in panic handling code (ie. here: library/std/src/panicking.rs) because at that point we don't know if we're in fork process(which requires no allocs, if we are) and the query of whether we're in fork or not can recursively panic!
+        * thread_local set/get are in: library/std/src/sys/unix/thread_local_key.rs
+          * /home/user/sandbox/rust/05_sandbox/recursion/refcell_option_variant
+            * /home/user/sandbox/rust/05_sandbox/macro/each_macro_call_gets_different_same_named_static
