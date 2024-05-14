@@ -193,6 +193,8 @@
   * /home/user/sandbox/rust/05_sandbox/fork/forking_test4
     \ this was testing how fork detection works, which is what i modified in rustc source
     * library/std/src/panicking.rs
+      \ /home/user/sandbox/rust/05_sandbox/tests/1tmp/as_root
+      \ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src
       \ must make sure the panic handling code isn't recursing due to recursive panics!
       * /home/user/sandbox/rust/05_sandbox/recursive_multipath/multipath_backoff4_mixed_both
         \ this is the strategy to avoid infinite recursing due to recursive panics
