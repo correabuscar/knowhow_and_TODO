@@ -199,8 +199,8 @@
         * /home/user/sandbox/rust/05_sandbox/thread_local/no_heap_allocations_thread_local
           \ need no heap thread_local to keep track of whether recursion happened in panic handling code (ie. here: library/std/src/panicking.rs) because at that point we don't know if we're in fork process(which requires no allocs, if we are) and the query of whether we're in fork or not can recursively panic!
         * thread_local set/get are in: library/std/src/sys/unix/thread_local_key.rs
-          * /home/user/sandbox/rust/05_sandbox/macro/each_macro_call_gets_different_same_named_static
-          * /home/user/sandbox/rust/05_sandbox/recursion/maybeuninit_t_with_compiler3_but_at_runtime_instead
+          - /home/user/sandbox/rust/05_sandbox/macro/each_macro_call_gets_different_same_named_static
+          - /home/user/sandbox/rust/05_sandbox/recursion/maybeuninit_t_with_compiler3_but_at_runtime_instead
             \ this is simplified version of /home/user/sandbox/rust/05_sandbox/thread_local/no_heap_allocations_thread_local
             \ ie. it uses one element of the array exclusively, for any thread(which is wrong) but meant to be used for only one thread, because it's just for tests.
-            * /home/user/sandbox/rust/05_sandbox/recursion/refcell_option_variant
+            - /home/user/sandbox/rust/05_sandbox/recursion/refcell_option_variant
