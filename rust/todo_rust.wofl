@@ -196,8 +196,13 @@
       \ /home/user/sandbox/rust/05_sandbox/tests/1tmp/as_root
       \ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src
       \ must make sure the panic handling code isn't recursing due to recursive panics!
-      * /home/user/sandbox/rust/05_sandbox/recursive_multipath/multipath_backoff4_mixed_both
+      \ 
+      * /home/user/sandbox/rust/05_sandbox/recursive_multipath/multipath_backoff4_mixed_both2
         \ this is the strategy to avoid infinite recursing due to recursive panics
+        \ in this version, i attempt to keep the thread_local static local to the spot/zone where it's used, which avoids having to use a hashmap and looking it up in it. done.
+        \
+        - prev. was: /home/user/sandbox/rust/05_sandbox/recursive_multipath/multipath_backoff4_mixed_both
+        - /home/user/sandbox/rust/05_sandbox/traits/specialized_method_required
         * /home/user/sandbox/rust/05_sandbox/thread_local/no_heap_allocations_thread_local
           \ need no heap thread_local to keep track of whether recursion happened in panic handling code (ie. here: library/std/src/panicking.rs) because at that point we don't know if we're in fork process(which requires no allocs, if we are) and the query of whether we're in fork or not can recursively panic!
         * thread_local set/get are in: library/std/src/sys/unix/thread_local_key.rs
