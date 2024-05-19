@@ -205,7 +205,10 @@
         - /home/user/sandbox/rust/05_sandbox/traits/specialized_method_required
         * /home/user/sandbox/rust/05_sandbox/thread_local/no_heap_allocations_thread_local
           \ need no heap thread_local to keep track of whether recursion happened in panic handling code (ie. here: library/std/src/panicking.rs) because at that point we don't know if we're in fork process(which requires no allocs, if we are) and the query of whether we're in fork or not can recursively panic!
-        * thread_local set/get are in: library/std/src/sys/unix/thread_local_key.rs
+          * /home/user/sandbox/rust/05_sandbox/error/error_propagation_and_from
+            \ need for when try_borrow_mut() is replacing borrow_mut() to avoid runtime panic
+          * thread_local set/get are in: library/std/src/sys/unix/thread_local_key.rs
+            \ was supposed to implement same interface, or something.
           - /home/user/sandbox/rust/05_sandbox/macro/each_macro_call_gets_different_same_named_static
           - /home/user/sandbox/rust/05_sandbox/recursion/maybeuninit_t_with_compiler3_but_at_runtime_instead
             \ this is simplified version of /home/user/sandbox/rust/05_sandbox/thread_local/no_heap_allocations_thread_local
