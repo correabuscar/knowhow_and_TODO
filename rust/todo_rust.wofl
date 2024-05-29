@@ -221,3 +221,12 @@
             \ this is simplified version of /home/user/sandbox/rust/05_sandbox/thread_local/no_heap_allocations_thread_local
             \ ie. it uses one element of the array exclusively, for any thread(which is wrong) but meant to be used for only one thread, because it's just for tests.
             - /home/user/sandbox/rust/05_sandbox/recursion/refcell_option_variant
+  * make sure any open of /dev/null is open_device instead and thus fail fast!
+    * cargo
+      \ https://github.com/rust-lang/cargo/blob/cbc12a2ebe0a99836249de0f80f025192e58cb4b/credential/cargo-credential/src/stdio.rs#L11
+      * /home/user/sandbox/rust/05_sandbox/open/open_device_only/
+        \ open_device impl which would work for cargo
+        \ run: ./e
+    * rustc
+      \ https://github.com/rust-lang/rust/blob/4cf5723dbe471ef0a32857b968b91498551f5e38/library/std/src/sys/pal/unix/process/process_common.rs#L479-L486
+
