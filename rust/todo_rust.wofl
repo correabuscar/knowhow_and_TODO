@@ -212,8 +212,8 @@
           * /home/user/sandbox/rust/05_sandbox/error/error_propagation_and_from
             \ need for when try_borrow_mut() is replacing borrow_mut() to avoid runtime panic
             * /home/user/sandbox/rust/05_sandbox/enum/enum_variant_name_via_macro_fn
-              * /home/user/sandbox/rust/05_sandbox/enum/just_the_generics_try1
-                * /home/user/sandbox/rust/05_sandbox/enum/no_lone_comma
+              - /home/user/sandbox/rust/05_sandbox/enum/just_the_generics_try1
+                - /home/user/sandbox/rust/05_sandbox/enum/no_lone_comma
           * thread_local set/get are in: library/std/src/sys/unix/thread_local_key.rs
             \ was supposed to implement same interface, or something.
           - /home/user/sandbox/rust/05_sandbox/macro/each_macro_call_gets_different_same_named_static
@@ -221,12 +221,17 @@
             \ this is simplified version of /home/user/sandbox/rust/05_sandbox/thread_local/no_heap_allocations_thread_local
             \ ie. it uses one element of the array exclusively, for any thread(which is wrong) but meant to be used for only one thread, because it's just for tests.
             - /home/user/sandbox/rust/05_sandbox/recursion/refcell_option_variant
-  * make sure any open of /dev/null is open_device instead and thus fail fast!
-    * cargo
+  - make sure any open of /dev/null is open_device instead and thus fail fast!
+    - cargo
+      \ made a comment: https://github.com/rust-lang/cargo/pull/12469/files/5ade1ad1eba1f840fa40126211fee1c6feb4e1da#r1618274162
       \ https://github.com/rust-lang/cargo/blob/cbc12a2ebe0a99836249de0f80f025192e58cb4b/credential/cargo-credential/src/stdio.rs#L11
-      * /home/user/sandbox/rust/05_sandbox/open/open_device_only/
+      \ patch is here: /home/user/sandbox/rust/05_sandbox/device/char_device_dev_null/WIP_rustc_patch
+      \ and here: /patches/portage/dev-lang/rust.reused/1800_cargo_stdin_dev_null_fail_fast.patch
+      \ used on rust 1.76.0 on gentoo
+      - /home/user/sandbox/rust/05_sandbox/open/open_device_only/
         \ open_device impl which would work for cargo
         \ run: ./e
-    * rustc
+    - rustc
       \ https://github.com/rust-lang/rust/blob/4cf5723dbe471ef0a32857b968b91498551f5e38/library/std/src/sys/pal/unix/process/process_common.rs#L479-L486
+      \ patch is same as the one for cargo (ie. both are in one), see above!
 
