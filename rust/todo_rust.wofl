@@ -209,11 +209,17 @@
         - /home/user/sandbox/rust/05_sandbox/traits/specialized_method_required
         - /home/user/sandbox/rust/05_sandbox/thread_local/no_heap_allocations_thread_local
           \ need no heap thread_local to keep track of whether recursion happened in panic handling code (ie. here: library/std/src/panicking.rs) before/at the point where we check if forked or not, because at that point we don't know if we're in fork process(which requires no allocs, if we are) and the query of whether we're in fork or not can recursively panic!
-          * /home/user/sandbox/rust/05_sandbox/error/error_propagation_and_from
+          - /home/user/sandbox/rust/05_sandbox/error/error_propagation_and_from
             \ need for when try_borrow_mut() is replacing borrow_mut() to avoid runtime panic
-            * /home/user/sandbox/rust/05_sandbox/enum/enum_variant_name_via_macro_fn
+            - /home/user/sandbox/rust/05_sandbox/enum/enum_variant_name_via_macro_fn
+              \ too difficult to make it support any generic enum definition, based on EBNF grammar of it:
+              \ https://doc.rust-lang.org/reference/items/enumerations.html
+              \ someone else did it better here: https://github.com/DanielKeep/rust-parse-generics
+              \ but that's ... somewhat complex.
               - /home/user/sandbox/rust/05_sandbox/enum/just_the_generics_try1
                 - /home/user/sandbox/rust/05_sandbox/enum/no_lone_comma
+            - /home/user/sandbox/rust/05_sandbox/enum/enum_variant_name_via_macro_fn2
+              \ only for what I need, a simple enum definition, that is.
           * thread_local set/get are in: library/std/src/sys/unix/thread_local_key.rs
             \ was supposed to implement same interface, or something.
           - /home/user/sandbox/rust/05_sandbox/macro/each_macro_call_gets_different_same_named_static
