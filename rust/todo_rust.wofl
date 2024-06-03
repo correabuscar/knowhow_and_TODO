@@ -186,6 +186,8 @@
     \ or if it's inside panic handler code and it shouldn't alloc(i forget why it shouldn't atm)
     \ or if it's inside global allocator code? (like if (re)alloc panicked, are we re-allocating in the panic handler?! we shouldn't)
 
+* look into the mentioned tools and use them
+  \ https://www.youtube.com/watch?v=qfknfCsICUM
 
 * get back to these:
   * browser addons, save on github?
