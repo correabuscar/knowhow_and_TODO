@@ -211,6 +211,7 @@
         - /home/user/sandbox/rust/05_sandbox/traits/specialized_method_required
         - /home/user/sandbox/rust/05_sandbox/thread_local/no_heap_allocations_thread_local
           \ need no heap thread_local to keep track of whether recursion happened in panic handling code (ie. here: library/std/src/panicking.rs) before/at the point where we check if forked or not, because at that point we don't know if we're in fork process(which requires no allocs, if we are) and the query of whether we're in fork or not can recursively panic!
+          \ updated version of this is now in /home/user/sandbox/rust/05_sandbox/recursive_multipath/multipath_backoff5
           * /home/user/sandbox/rust/05_sandbox/strings/concat_strings_on_stack/concat_strings_and_a_num_const
             \ one way to concat string+const at runtime on stack
           - /home/user/sandbox/rust/05_sandbox/error/error_propagation_and_from
