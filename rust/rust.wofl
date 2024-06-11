@@ -33,4 +33,8 @@
     * impl that trait (trait extension)
     * this way those using our type can override the methods and call the previous ones
       \ can still call prev. ones by using TypeName::prev_method_name(self,...) from within my own prev_method_name() impl!
+  * deref is evil, avoid it; so never impl Deref trait aka deref() fn
+    \ can accidentally use it when not intended, therefore avoid for safety
+    \ see commit 3cb330441b64de8e162e653132361e1f8d4dc7b5 in sandbox or search for commits with "deref is evil"
+
 
