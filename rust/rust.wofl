@@ -36,5 +36,9 @@
   * deref is evil, avoid it; so never impl Deref trait aka deref() fn
     \ can accidentally use it when not intended, therefore avoid for safety
     \ see commit 3cb330441b64de8e162e653132361e1f8d4dc7b5 in sandbox or search for commits with "deref is evil"
+  * must always use a project /rustfmt.toml to avoid issues like single line comment alignments
+    \ https://github.com/rust-lang/rustfmt/issues/5391#issuecomment-1159932006
+    * /rustfmt.toml contents:
+      \ version = "Two"
 
 
