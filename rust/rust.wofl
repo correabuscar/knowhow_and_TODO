@@ -38,6 +38,7 @@
     \ see commit 3cb330441b64de8e162e653132361e1f8d4dc7b5 in sandbox or search for commits with "deref is evil"
   * must always use a project /rustfmt.toml to avoid issues like single line comment alignments
     \ https://github.com/rust-lang/rustfmt/issues/5391#issuecomment-1159932006
+    \ fixed ^ by patch: /patches/portage/dev-lang/rust.reused/2100_rustfmt_single_line_comments_left_space_behind.patch
     * /rustfmt.toml contents:
       \ version = "Two"
 
