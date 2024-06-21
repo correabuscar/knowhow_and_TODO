@@ -249,4 +249,16 @@
     - rustc
       \ https://github.com/rust-lang/rust/blob/4cf5723dbe471ef0a32857b968b91498551f5e38/library/std/src/sys/pal/unix/process/process_common.rs#L479-L486
       \ patch is same as the one for cargo (ie. both are in one), see above!
+  * make Once and thus OnceLock not deadlock if re-entry happens in their call_once respectively get_or_init
+    \ apparently doing it only for Once is enough, because OnceLock calls it.
+    \ so maybe mod the call() fn of Once in library/std/src/sys/sync/once/futex.rs
+    \ ... to detect re-entry(ie. from same thread) and then panic or something, better than deadlock forever.
+    \ deadlock happens on the line: futex_wait(&self.state, QUEUED, None);
+    \ even on nightly of rustc 1.81.0-nightly (684b3553f 2024-06-20)
+    * get that code that can detect re-entry that I use in panic handler in rustc code (not user panic handler callback)
+      \ use that to detect re-entry from same thread.
+      \ should be in /home/user/sandbox/rust/05_sandbox/recursive_multipath/multipath_backoff5 but it's not finished atm!
+    * therefore, it should deadlock on this example: /home/user/sandbox/rust/05_sandbox/global_allocator/deadlock_on_cleanup
+      \ after no-deadlock for Once is implemented, that is.
+
 
