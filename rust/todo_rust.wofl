@@ -192,6 +192,9 @@
 * get back to these:
   * browser addons, save on github?
     \ /home/user/SOURCE/browser.stuff/both
+  * fix 'cargo test' for tests that abort/exit
+    \ after the below fork stuff is made
+    \ see above where they're detailed!
   * /home/user/sandbox/rust/05_sandbox/fork/forking_test4
     \ this was testing how fork detection works, which is what i modified in rustc source
     * library/std/src/panicking.rs
@@ -255,6 +258,10 @@
     \ ... to detect re-entry(ie. from same thread) and then panic or something, better than deadlock forever.
     \ deadlock happens on the line: futex_wait(&self.state, QUEUED, None);
     \ even on nightly of rustc 1.81.0-nightly (684b3553f 2024-06-20)
+    \ https://doc.rust-lang.org/std/sync/struct.Once.html#method.call_once
+    \ "If the given closure recursively invokes call_once on the same Once instance, the exact behavior is not specified: allowed outcomes are a panic or a deadlock."
+    \ https://doc.rust-lang.org/std/sync/struct.OnceLock.html#method.get_or_init
+    \ "It is an error to reentrantly initialize the cell from f. The exact outcome is unspecified. Current implementation deadlocks, but this may be changed to a panic in the future."
     * get that code that can detect re-entry that I use in panic handler in rustc code (not user panic handler callback)
       \ use that to detect re-entry from same thread.
       \ should be in /home/user/sandbox/rust/05_sandbox/recursive_multipath/multipath_backoff5 but it's not finished atm!
