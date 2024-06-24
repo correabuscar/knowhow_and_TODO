@@ -267,10 +267,12 @@
       \ should be in /home/user/sandbox/rust/05_sandbox/recursive_multipath/multipath_backoff5 but it's not finished atm!
     * therefore, it should deadlock on this example: /home/user/sandbox/rust/05_sandbox/global_allocator/deadlock_on_cleanup
       \ after no-deadlock for Once is implemented, that is.
-  * make a polkitd equivalent that can handle reboot/shutdown from lxqt without polkitd being installed
-    * make dbus server equivalent of polkitd
-      * run lxqt-leave to see what dbus stuff it expects our dbus server to have
-        * make it in /home/user/sandbox/rust/05_sandbox/dbus/custom_dbus_polkitd
+  - make a polkitd equivalent that can handle reboot/shutdown from lxqt without polkitd being installed
+    \ made it in /home/user/sandbox/rust/05_sandbox/dbus/custom_dbus_polkitd
+    - make dbus server equivalent of polkitd
+      \ well not exactly.
+      - run lxqt-leave to see what dbus stuff it expects our dbus server to have
+        - make it in /home/user/sandbox/rust/05_sandbox/dbus/custom_dbus_polkitd
         * read https://dbus2.github.io and maybe use https://github.com/dbus2/zbus
 
 
