@@ -2928,6 +2928,13 @@
           * eselect fontconfig enable 57-dejavu-sans-mono.conf
             \ was just installed but not enabled
             * eselect fontconfig list
+        * need terminus font for btop to work in qterminal
+          * emerge -av media-fonts/terminus-font
+            * enable it
+              \ example:
+              \ eselect fontconfig list|grep -i term
+              \ [94]  75-yes-terminus.conf
+              \ eselect fontconfig enable 94
         - time emerge -nav x11-misc/pcmanfm (actually we don't want this, xfce's desktop seems better though different! ie. you can't have shortcuts on desktop, only minimized windows showing as icons!)
           \ this wants 1 new USE flag: gtk
           \ Total: 12 packages (12 new), Size of downloads: 7,542 KiB
