@@ -274,6 +274,11 @@
       - run lxqt-leave to see what dbus stuff it expects our dbus server to have
         - make it in /home/user/sandbox/rust/05_sandbox/dbus/custom_dbus_polkitd
         * read https://dbus2.github.io and maybe use https://github.com/dbus2/zbus
+  * fix gnu diff/patch, diffy and git diff
+    \ so they don't generate or apply ambiguous hunks
+    \ https://github.com/bmwill/diffy/issues/31
+    * then regen all patches with this fixed one!
+
 
 
 
