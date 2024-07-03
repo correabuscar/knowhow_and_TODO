@@ -2019,3 +2019,15 @@
 * terminal escape codes exploit or stuff, to be aware of
   \ https://dgl.cx/2023/09/ansi-terminal-security
 
+* emerge key update without WKD
+  \ assuming this wasn't updated(true currently): https://gitweb.gentoo.org/repo/gentoo.git/log/sec-keys/openpgp-keys-gentoo-release
+  \ then you can use steps from here: https://bugs.gentoo.org/830418#c3
+  \ so:
+  \ wget https://qa-reports.gentoo.org/output/service-keys.gpg
+  \ gpg --import ./service-keys.gpg
+  \ gpg -a --export DCD05B71EAB94199527F44ACDB6B8C1F96D8BF6D > /usr/share/openpgp-keys/gentoo-release.asc
+  \ that .asc is owned by the outdated: sec-keys/openpgp-keys-gentoo-release: /usr/share/openpgp-keys/gentoo-release.asc
+  * --forceWKDupdate n is the default
+    \ it's a patch I've added to skip WKD keys update! otherwise the strength of the security is only as strong as the https connection used to fetch the key(which happens on each emerge --sync) with which to check if the repo you just rsync-ed is untampered with. Coulda found a less subtle way, cmon.
+    \ /patches/portage/sys-apps/portage.reused/2100_noautomaticWKDupdates_1of2_for_3_0_52.patch
+
