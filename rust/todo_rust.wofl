@@ -209,6 +209,14 @@
         - /home/user/sandbox/rust/05_sandbox/error/error_propagation_and_from
         * /home/user/sandbox/rust/05_sandbox/error/error_propagation_with_own_msg_and_location2
           \ make this work first, then use it in multipath_backoff5
+          * currently there's a mess inside this
+            \ there's an attempt to format &str without heap allocation
+            \ which would be held/embedded in error messages
+            \ which would be carried over when unwinding
+            \ however the logic for non-heap str formatting requires itself some error handling and thus non-heap str formatting when showing those, when they happen, so it's like a non-heap str inside the non-heap str, but maybe this can be reused by having only one non-heap str and reusing it inside itself, and it would avoid infinite loop tho, because the cases for which it's used inside are more strict/hardcoded, so to speak
+            * but I think to progress here, I need to first split out (again) the non-heap str thing, and the errors which use non-heap strs to propagate
+              \ and then re-merge them into /home/user/sandbox/rust/05_sandbox/error/error_propagation_with_own_msg_and_location2
+              \ else it seems to be a mess of 3 things and I can't seem to reason about them this way.
         - prev. was: /home/user/sandbox/rust/05_sandbox/recursive_multipath/multipath_backoff4_mixed_both2
         - prev. was: /home/user/sandbox/rust/05_sandbox/recursive_multipath/multipath_backoff4_mixed_both
         - /home/user/sandbox/rust/05_sandbox/traits/specialized_method_required
@@ -277,7 +285,13 @@
   * fix gnu diff/patch, diffy and git diff
     \ so they don't generate or apply ambiguous hunks
     \ https://github.com/bmwill/diffy/issues/31
+    \ https://lore.kernel.org/git/CAFjaU5vvk-nNLvCyXAgU9C3ScKBNRPFB7=1PXejmLZi+r7EbNQ@mail.gmail.com/t/#u
+    \ https://lists.gnu.org/archive/html/bug-patch/2024-07/msg00000.html
+    \ I've attempted to ask other more qualified people to do that, but I've the feeling nobody will because they'd have to experience it to gain the drive to do it, like I did, so it might still be up to me to do it...
     * then regen all patches with this fixed one!
+    * seems difficult in C, so maybe do it for 'diffy' first, in rust
+      \ but if I do it for diffy, then I might just want to use 'diffy' instead (as a wrapper for both diff/patch and for `git diff/apply`), and just log(syslog?) the cases of diff/patch with args that aren't supported, to see then if they're handled properly (eg. exit codes are respected, by whoever's calling these commands, instead of them assuming they'll do what they do, ie. an `if diff ...` in some script, might assume any exit code means difference but exit code 2 is trouble, only exit code 1 is difference, and 0 is sameness)
+
 
 
 
