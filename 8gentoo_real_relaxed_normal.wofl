@@ -4174,6 +4174,8 @@
       \ to use neovim (cmd is nvim) instead of vim
     * emerge -nav x11-terms/alacritty
       \ this is the terminal we used instead of qterminal (which is bugged when unlimited history and can crash https://github.com/lxqt/qtermwidget/issues/489 )
+    * emerge -nav sys-apps/moreutil
+      \ for 'errno' command, try errno -l
     * next...
 
 
