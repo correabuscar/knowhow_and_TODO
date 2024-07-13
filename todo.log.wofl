@@ -2450,6 +2450,14 @@ see if virtualbox is sending the checkCount value too when asking for updates fr
 --------
 find a shell written in rust to replace bash with, maybe: app-shells/nushell-0.91.0, or fish or shrs - check later.
 --------
+add CLA/DCO ability to PRs https://github.com/contributor-assistant/github-action
+DCO is https://developercertificate.org/
+look at this for the DCO part: https://github.com/SAP/openui5/blob/master/CONTRIBUTING.md#contribute-code
+but don't use CLA Assistant, but rather that github action https://github.com/contributor-assistant/github-action
+
+--------
+--------
+--------
 --------
 
 // thanks <telemachus> on #vim freenode irc, for a filetype that's not .c or .cpp which ale would yell/error on:
