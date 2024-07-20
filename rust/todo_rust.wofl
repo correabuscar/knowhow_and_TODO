@@ -197,6 +197,9 @@
     \ see above where they're detailed!
   * /home/user/sandbox/rust/05_sandbox/fork/forking_test4
     \ this was testing how fork detection works, which is what i modified in rustc source
+    * make sure forked process doesn't exit at all, but can _exit() aka man 2 _exit
+      \ "exit isn't signal-safe, so it mustn't be called after fork anyway." - https://github.com/rust-lang/rust/pull/127863#discussion_r1685373754
+      * so I guess panic on exit, aka std::process::exit() make it panic if this is forked process!
     * library/std/src/panicking.rs
       \ /home/user/sandbox/rust/05_sandbox/tests/1tmp/as_root
       \ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src
@@ -291,6 +294,7 @@
     * then regen all patches with this fixed one!
     * seems difficult in C, so maybe do it for 'diffy' first, in rust
       \ but if I do it for diffy, then I might just want to use 'diffy' instead (as a wrapper for both diff/patch and for `git diff/apply`), and just log(syslog?) the cases of diff/patch with args that aren't supported, to see then if they're handled properly (eg. exit codes are respected, by whoever's calling these commands, instead of them assuming they'll do what they do, ie. an `if diff ...` in some script, might assume any exit code means difference but exit code 2 is trouble, only exit code 1 is difference, and 0 is sameness)
+
 
 
 
