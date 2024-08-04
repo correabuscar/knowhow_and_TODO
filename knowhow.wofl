@@ -812,10 +812,12 @@
       \ linux (loop)/isolinux/rescue64 isoloop=$isofile setkmap=us dns=8.8.8.8 dostartx rootpass=/ nocache
       \ initrd (loop)/isolinux/initram.igz
       \ }
+      \ ^ that's outdated(aug2024) see: /etc/grub.d/40_custom or https://superuser.com/questions/1438004/grub-configuration-from-systemrescuecd-upgrade-from-5-to-6/1457293#1457293
       \
       \ right, so setkmap=us to not get the prompt for keyboard
       \ nocache to can easily change to docache if wanted via 'e' key at grub prompt! but my test shows docache has no effect in this case!
       \ rootpass is the root password
+      \ #XXX: don't use memory_corruption_check_size=600K or you get kernel panic "Real mode trampoline was not allocated" because it says before it doesn't have enough low ram for it.
     * for Manjaro
       \ for img_dev=/dev/sda3  can be /dev/disk/by-label/wtwlabelsda3hashere or /dev/mapper/luks_on_sda2_boot  where sda3 is the device which contains the .iso file
       \ XXX: you take the line with misolabel=MJRO1606 from inside the .iso under /isolinux/isolinux.cfg

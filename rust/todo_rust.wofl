@@ -294,6 +294,13 @@
     * then regen all patches with this fixed one!
     * seems difficult in C, so maybe do it for 'diffy' first, in rust
       \ but if I do it for diffy, then I might just want to use 'diffy' instead (as a wrapper for both diff/patch and for `git diff/apply`), and just log(syslog?) the cases of diff/patch with args that aren't supported, to see then if they're handled properly (eg. exit codes are respected, by whoever's calling these commands, instead of them assuming they'll do what they do, ie. an `if diff ...` in some script, might assume any exit code means difference but exit code 2 is trouble, only exit code 1 is difference, and 0 is sameness)
+  * fix screensaver/locker
+    \ /home/user/sandbox/rust/05_sandbox/screensaver/own_made_screenlocker_triggerer
+    * rethink how blanking/locking works
+      * maybe make threads for each and talk to them via channels
+        * must know when is locked is active
+          * if locked, check for reblank eg. every 10 sec
+
 
 
 
